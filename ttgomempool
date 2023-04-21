@@ -1,5 +1,3 @@
-```arduino
-
 #include <TFT_eSPI.h>
 #include <SPI.h>
 #include <HTTPClient.h>
@@ -420,5 +418,3 @@ void displayBitcoinPrice() {
   // End the HTTP connection
   http.end();
 }
-
-```
