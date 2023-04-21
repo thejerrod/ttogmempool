@@ -1,3 +1,5 @@
+```arduino
+
 #include <TFT_eSPI.h>
 #include <SPI.h>
 #include <HTTPClient.h>
@@ -105,6 +107,21 @@ void loop() {
       // Disply the current bitcoin price index
       displayBitcoinPrice();
       break;
+
+    case 4:
+      // Display transaction volume over time
+      displayTransactionVolumeOverTime();
+      break;
+
+    case 5:
+    // Display capacity growth of the lightning network over time
+    displayCapacityGrowth();
+    break;
+
+    case 6:
+    // Display bitcoin price
+    displayBitcoinPrice();
+    break;
   }
 }
 
@@ -166,6 +183,69 @@ void displaySuggestedFees() {
   http.end();
 }
 
+void displayTransactionVolumeOverTime() {
+  // Initialize HTTP client and JSON document
+  HTTPClient http;
+  DynamicJsonDocument doc(2048);
+
+  // Send request to mempool.space API
+    http.begin(block_api_url);
+  int httpCode = http.GET();
+
+  // If request was successful, parse JSON data
+  if (httpCode == HTTP_CODE_OK) {
+    String jsonStr = http.getString();
+    deserializeJson(doc, jsonStr);
+
+    // Extract data for each block
+    int numBlocks = doc.size();
+    int maxTxs = 0;
+    float txsPerBlock[numBlocks];
+    for (int i = 0; i < numBlocks; i++) {
+      int txCount = doc[i]["tx_count"];
+      txsPerBlock[i] = (float)txCount;
+      if (txCount > maxTxs) {
+        maxTxs = txCount;
+      }
+    }
+
+    // Initialize variables for drawing the chart
+    int chartX = 0;
+    int chartY = 40;
+    int chartW = tft.width();
+    int chartH = tft.height() - chartY - 10;
+    int chartPadding = 10;
+    int numPoints = numBlocks;
+    float xStep = (float)(chartW - 2*chartPadding) / (float)(numPoints - 1);
+    float yScale = (float)(chartH - 2*chartPadding) / (float)maxTxs;
+
+    // Draw chart axis and labels
+    tft.fillRect(0, chartY, tft.width(), chartH, TFT_BLACK);
+    tft.drawFastHLine(chartPadding, chartY + chartH - chartPadding, chartW - 2*chartPadding, TFT_WHITE);
+    tft.drawFastVLine(chartPadding, chartY + chartH - chartPadding, -chartH + 2*chartPadding, TFT_WHITE);
+    tft.setTextSize(1);
+    tft.setTextColor(TFT_WHITE);
+    tft.setCursor(chartPadding, chartY + chartH - chartPadding + 5);
+    tft.print("Time");
+    tft.setCursor(5, chartY + chartH/2);
+    tft.print("Num Transactions");
+    tft.drawFastVLine(chartPadding, chartY + chartPadding, chartH - 2*chartPadding, TFT_WHITE);
+    tft.drawFastHLine(chartPadding, chartY + chartH - chartPadding, chartW - 2*chartPadding, TFT_WHITE);
+
+    // Draw chart line
+    tft.drawFastHLine(chartPadding, chartY + chartH - chartPadding, chartW - 2*chartPadding, TFT_YELLOW);
+    for (int i = 0; i < numPoints-1; i++) {
+      float x1 = chartPadding + i*xStep;
+      float x2 = chartPadding + (i+1)*xStep;
+      float y1 = chartY + chartH - chartPadding - yScale*txsPerBlock[i];
+      float y2 = chartY + chartH - chartPadding - yScale*txsPerBlock[i+1];
+      tft.drawLine(x1, y1, x2, y2, TFT_GREEN);
+    }
+  }
+
+  // Close HTTP connection
+  http.end();
+}
 
 void displayLightningStats() {
   // Clear the screen
@@ -219,6 +299,44 @@ void displayLightningStats() {
   // Clean up
   http.end();
 }
+
+void displayCapacityGrowth() {
+  // Make an HTTP request to the statistics endpoint
+  HTTPClient http;
+  http.begin(lightning_api_url);
+  int httpCode = http.GET();
+  if (httpCode != 200) {
+    tft.println("HTTP request failed");
+    return;
+  }
+  
+  // Parse the JSON response
+  DynamicJsonDocument doc(1024);
+  deserializeJson(doc, http.getString());
+  http.end();
+  
+  // Get the capacity data and create a graph
+  int numPoints = doc["capacity"]["history"].size();
+  int xIncrement = 240 / numPoints;
+  int x = 0;
+  int yPrev = 0;
+  for (int i = 0; i < numPoints; i++) {
+    int y = doc["capacity"]["history"][i]["total_capacity"].as<int>() / 1000000000;
+    tft.drawLine(x, 120 - yPrev, x + xIncrement, 120 - y, TFT_WHITE);
+    x += xIncrement;
+    yPrev = y;
+  }
+  
+  // Add labels and title to the graph
+  tft.setTextColor(TFT_WHITE);
+  tft.setTextSize(1);
+  tft.drawString("Capacity Growth", 5, 15, 2);
+  tft.drawString("Time (latest to oldest)", 80, 110);
+  tft.drawString("Capacity (in billions of sats)", 0, 50, 90);
+}
+
+
+
 void displayBlockHeight() {
   // Clear the screen
   tft.fillScreen(BACKGROUND_COLOR);
@@ -302,3 +420,5 @@ void displayBitcoinPrice() {
   // End the HTTP connection
   http.end();
 }
+
+```
