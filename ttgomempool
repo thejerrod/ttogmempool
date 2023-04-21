@@ -14,11 +14,14 @@ TFT_eSPI tft = TFT_eSPI();
 #define TEXT_COLOR TFT_WHITE
 #define ACCENT_COLOR TFT_CYAN
 #define FASTEST_COLOR TFT_RED
+#define HALF_HOUR_COLOR TFT_ORANGE
+#define HOUR_COLOR TFT_GREEN
+
 
 // API URLs
 const char* mempool_api_url = "https://mempool.space/api/v1/fees/recommended";
 const char* lightning_api_url = "https://mempool.space/api/v1/lightning/statistics/latest";
-const char* block_height_api_url = "https://mempool.space/api/blocks/tip/height";
+const char* block_api_url = "https://mempool.space/api/blocks/";
 
 // Default suggested fees
 int fastestFee = 0;
