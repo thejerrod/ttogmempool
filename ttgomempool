@@ -1,4 +1,5 @@
 #include <TFT_eSPI.h>
+#include <SPI.h>
 #include <HTTPClient.h>
 #include <ArduinoJson.h>
 
@@ -12,6 +13,7 @@ TFT_eSPI tft = TFT_eSPI();
 #define BACKGROUND_COLOR TFT_BLACK
 #define TEXT_COLOR TFT_WHITE
 #define ACCENT_COLOR TFT_CYAN
+#define FASTEST_COLOR TFT_RED
 
 // API URLs
 const char* mempool_api_url = "https://mempool.space/api/v1/fees/recommended";
