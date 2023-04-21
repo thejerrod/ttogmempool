@@ -99,11 +99,6 @@ void loop() {
       // Display the current block height on the TFT display using the TFT_eSPI library
       displayBlockHeight();
       break;
-
-    case 3:
-      // Display the current halving info **im not sure if this working
-      displayHalvingInfo();
-      break;
   }
 }
 
@@ -208,32 +203,8 @@ void displayLightningStats() {
       tft.print("Median Fee Rate: ");
       tft.print(med_fee_rate);
       tft.println(" sats/byte");
-      tft.setTextColor(ACCENT_COLOR);
-      tft.println("_______________________________");
-      tft.setTextColor(TEXT_COLOR);
-      tft.println(" ");
-      tft.println("Lightning Network Activity");
-      tft.setTextColor(ACCENT_COLOR);
-      tft.println("_______________________________");
-      tft.setTextColor(TEXT_COLOR);
-      tft.print("Channels Opened: ");
-      tft.print(doc["channel_opens"]);
-      tft.println();
-      tft.print("Channels Closed: ");
-      tft.print(doc["channel_closes"]);
-      tft.println();
-      tft.print("Successful Payments: ");
-      tft.print(doc["num_payments"]);
-      tft.println();
-      tft.print("Failed Payments: ");
-      tft.print(doc["num_failed_payments"]);
-      tft.println();
-      tft.setTextColor(ACCENT_COLOR);
-      tft.println("_______________________________");
-    } else {
-      // If parsing the JSON failed, display an error message
-      tft.println("Error: Failed to parse JSON response");
-    }
+      
+    } 
   } else {
     // If the API request failed, display an error message
     tft.println("Error: Failed to retrieve Lightning Network statistics");
@@ -248,7 +219,7 @@ void displayBlockHeight() {
 
   // Send the API request
   HTTPClient http;
-  http.begin(block_height_api_url);
+ http.begin(block_api_url);
   int httpCode = http.GET();
 
   // Check if the request was successful
@@ -257,9 +228,14 @@ void displayBlockHeight() {
     String response = http.getString();
     DynamicJsonDocument doc(1024);
     deserializeJson(doc, response);
-    
+
     // Get the current block height from the response
-    current_block = doc["height"];
+    int current_block = doc[0]["height"];
+
+    // Calculate blocks and time until halving
+    int blocks_since_last_halving = current_block % 210000;
+    int blocks_until_halving = 210000 - blocks_since_last_halving;
+    int time_until_halving = blocks_until_halving * 10;
 
     // Display the current block height and some additional information on the TFT display
     tft.setCursor(0, 0);
@@ -270,78 +246,14 @@ void displayBlockHeight() {
     tft.print("Blocks Until Halving: ");
     tft.println(blocks_until_halving);
     tft.print("Time Until Halving: ");
-    tft.println(time_until_halving);
+    tft.print(time_until_halving / 60);
+    tft.print("m ");
+    tft.print(time_until_halving % 60);
+    tft.print("s");
   }
   else {
     // Display an error message on the TFT display
     tft.setCursor(0, 50);
-    tft.println("Error: Unable to retrieve block height");
-  }
-
-  // End the HTTP connection
-  http.end();
-}
-void displayHalvingInfo() {
-  // Clear the screen
-  tft.fillScreen(BACKGROUND_COLOR);
-
-  // Send the API requests to get the current block height and block count
-  HTTPClient http;
-  http.begin(block_height_api_url);
-  int httpCode = http.GET();
-
-  // Check if the request was successful
-  if (httpCode == HTTP_CODE_OK) {
-    // Parse the JSON response
-    String response = http.getString();
-    DynamicJsonDocument doc(1024);
-    deserializeJson(doc, response);
-    
-    // Get the current block height and total block count from the response
-    current_block = doc["height"];
-    total_blocks = doc["best_height"];
-
-    // Calculate the blocks remaining until the next halving event
-    int blocks_until_halving = HALVING_INTERVAL - (current_block % HALVING_INTERVAL);
-    // Calculate the estimated time remaining until the next halving event
-    int time_until_halving = blocks_until_halving * AVERAGE_BLOCK_TIME;
-
-    // Display the halving information on the TFT display
-    tft.setCursor(0, 0);
-    tft.setTextColor(ACCENT_COLOR);
-    tft.println("Bitcoin Halving Information");
-    tft.println();
-
-    tft.setTextColor(TEXT_COLOR);
-    tft.print("Current Block Height: ");
-    tft.println(current_block);
-    tft.print("Total Blocks: ");
-    tft.println(total_blocks);
-    tft.print("Blocks Until Halving: ");
-    tft.println(blocks_until_halving);
-    tft.print("Estimated Time Until Halving: ");
-    tft.print(time_until_halving / 60);
-    tft.print(" minutes (");
-    tft.print(time_until_halving / (60 * 24));
-    tft.print(" days)");
-    tft.println();
-
-    // Draw a progress bar to show the progress towards the next halving
-    int progress = (current_block % HALVING_INTERVAL) * 100 / HALVING_INTERVAL;
-    tft.fillRect(10, 120, 220, 10, BACKGROUND_COLOR);
-    tft.fillRect(10, 120, 220 * progress / 100, 10, ACCENT_COLOR);
-    tft.drawRect(10, 120, 220, 10, TEXT_COLOR);
-    tft.setCursor(10, 130);
-    tft.print("Next Halving: ");
-    tft.print(blocks_until_halving);
-    tft.print(" blocks (");
-    tft.print(progress);
-    tft.print("%)");
-  }
-  else {
-    // Display an error message on the TFT display
-    tft.setCursor(0, 0);
-    tft.setTextColor(ACCENT_COLOR);
     tft.println("Error: Unable to retrieve block height");
   }
 
