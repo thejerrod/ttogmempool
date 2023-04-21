@@ -1,49 +1,43 @@
-This Arduino sketch is designed to display various Bitcoin network statistics on a TFT display. The sketch uses the TFT_eSPI, SPI, HTTPClient, and ArduinoJson libraries. The sketch is designed to be used with an ESP32 microcontroller.
+# TTGO Bitcoin MemPool Monitor
 
-Hardware requirements
----------------------
+This is a simple Bitcoin mempool monitor for the TTGO T-Display ESP32. It displays the current state of the Bitcoin mempool, including the number of unconfirmed transactions, the estimated transaction fee rates, the current block height, and a line chart showing the suggested fee rate over the past 24 hours.
 
--   ESP32 microcontroller
--   TFT display
--   Two buttons connected to pins 37 and 38
+## Installation
 
-Libraries used
---------------
+1. Clone this repository or download the ZIP file and extract it to your preferred location.
+2. Open the `ttgomempool.ino` file in the Arduino IDE.
+3. Connect your TTGO T-Display to your computer using a USB cable.
+4. Select your board and serial port in the Arduino IDE.
+5. Upload the sketch to your board.
 
--   TFT_eSPI - Used to control the TFT display
--   SPI - Used for communication with the TFT display
--   HTTPClient - Used for making HTTP requests to the Bitcoin API
--   ArduinoJson - Used for parsing JSON responses from the Bitcoin API
+## Usage
 
-Installation
-------------
+After uploading the sketch to your board, the TTGO T-Display should display the current state of the Bitcoin mempool. You can use the two buttons on the side of the device to cycle through the different display modes.
 
-1.  Install the required libraries using the Arduino library manager.
-2.  Download and open the sketch in the Arduino IDE.
-3.  Upload the sketch to the ESP32 microcontroller.
+### Display Modes
 
-Usage
------
+- **Transaction Count**: Displays the current number of unconfirmed transactions in the Bitcoin mempool.
+- **Suggested Fee Rates**: Displays the current suggested fee rates for Bitcoin transactions, based on their estimated confirmation time.
+- **Current Block**: Displays the current block height of the Bitcoin blockchain.
+- **Fee Rate Over Time**: Displays a line chart showing the suggested fee rate over the past 24 hours.
+- **Transaction Volume Over Time**: Displays a line chart showing the number of transactions confirmed in each block over the past 24 hours.
+- **Capacity Growth**: Displays a line chart showing the growth of Lightning Network capacity over time.
 
-The sketch displays four different Bitcoin network statistics pages that can be cycled through using the two buttons connected to pins 37 and 38. The four pages are:
+### Button Functions
 
--   Suggested fees
--   Lightning network statistics
--   Current block height
--   Halving info
+- **Button 1**: Cycles through the different display modes.
+- **Button 2**: Toggles the display of the chart legend in the "Fee Rate Over Time", "Transaction Volume Over Time", and "Capacity Growth" display modes.
 
-The suggested fees page displays the suggested Bitcoin transaction fees in satoshis per virtual byte (sats/vB) for the fastest, half-hour, and hour confirmation times. The page also includes a graph displaying the suggested fees for each confirmation time.
+## Contributing
 
-The lightning network statistics page displays the number of channels, number of nodes, total capacity, and median fee rate for the Lightning Network.
+If you would like to contribute to this project, please feel free to submit a pull request or open an issue.
 
-The current block height page displays the current block height of the Bitcoin blockchain.
+## Credits
 
-The halving info page displays the number of blocks until the next Bitcoin halving event, which is an event that occurs approximately every four years in which the block reward for Bitcoin miners is cut in half.
+This project uses the following libraries:
 
-Limitations
------------
+- [TFT_eSPI](https://github.com/Bodmer/TFT_eSPI) by Bodmer
+- [HTTPClient](https://github.com/amcewen/HttpClient) by Adrian McEwen
+- [ArduinoJson](https://github.com/bblanchon/ArduinoJson) by Benoit Blanchon
 
--   The sketch only displays information for the Bitcoin network and is not designed to display information for other cryptocurrencies.
--   The sketch relies on the availability and accuracy of the Bitcoin API being used. If the API is unavailable or returns inaccurate information, the information displayed on the TFT display may be incorrect or outdated.
--   The sketch is designed to be used with an ESP32 microcontroller and may not be compatible with other microcontrollers.
--   The sketch may require modifications to the pin numbers used for the buttons depending on the specific ESP32 development board being used.
+The line charts are generated using the [TFT_eSPI_Graph library](https://github.com/Bodmer/TFT_eSPI_Graph) by Bodmer.
