@@ -46,8 +46,6 @@ int currentDisplay = 0;
 int maxDisplay = 4;
 
 void setup() {
-  Serial.begin(115200);
-
   // Initialize the TFT display
   tft.init();
   tft.setRotation(1);
