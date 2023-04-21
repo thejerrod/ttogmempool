@@ -22,6 +22,7 @@ TFT_eSPI tft = TFT_eSPI();
 const char* mempool_api_url = "https://mempool.space/api/v1/fees/recommended";
 const char* lightning_api_url = "https://mempool.space/api/v1/lightning/statistics/latest";
 const char* block_api_url = "https://mempool.space/api/blocks/";
+const char* bitcoin_price_api_url = "https://api.coindesk.com/v1/bpi/currentprice.json"; 
 
 // Default suggested fees
 int fastestFee = 0;
@@ -98,6 +99,11 @@ void loop() {
     case 2:
       // Display the current block height on the TFT display using the TFT_eSPI library
       displayBlockHeight();
+      break;
+
+    case 3:
+      // Disply the current bitcoin price index
+      displayBitcoinPrice();
       break;
   }
 }
@@ -255,6 +261,42 @@ void displayBlockHeight() {
     // Display an error message on the TFT display
     tft.setCursor(0, 50);
     tft.println("Error: Unable to retrieve block height");
+  }
+
+  // End the HTTP connection
+  http.end();
+}
+
+void displayBitcoinPrice() {
+  // Clear the screen
+  tft.fillScreen(BACKGROUND_COLOR);
+
+  // Send the API request
+  HTTPClient http;
+  http.begin(bitcoin_price_api_url);
+  int httpCode = http.GET();
+
+  // Check if the request was successful
+  if (httpCode == 200) {
+    // Parse the JSON response
+    String response = http.getString();
+    DynamicJsonDocument doc(1024);
+    deserializeJson(doc, response);
+    
+    // Get the current bitcoin price from the response
+    float bitcoin_price = doc["bpi"]["USD"]["rate_float"];
+
+    // Display the current bitcoin price on the TFT display
+    tft.setCursor(0, 0);
+    tft.println("Current Bitcoin Price");
+    tft.println();
+    tft.print("Price: $");
+    tft.println(bitcoin_price, 2);
+  }
+  else {
+    // Display an error message on the TFT display
+    tft.setCursor(0, 50);
+    tft.println("Error: Unable to retrieve bitcoin price");
   }
 
   // End the HTTP connection
