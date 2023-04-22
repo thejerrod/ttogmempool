@@ -1,5 +1,5 @@
 #include <TFT_eSPI.h>
-
+#include <WiFi.h>
 #include <HTTPClient.h>
 #include <ArduinoJson.h>
 
@@ -18,12 +18,17 @@ TFT_eSPI tft = TFT_eSPI();
 #define HOUR_COLOR TFT_GREEN
 
 
+// wifi setup
+const char* ssid     = "lulznet";       ///EDIIIT
+const char* password = "xxxxxx"; //edit
+
 
 // API URLs
 const char* mempool_api_url = "https://mempool.space/api/v1/fees/recommended";
 const char* lightning_api_url = "https://mempool.space/api/v1/lightning/statistics/latest";
 const char* block_api_url = "https://mempool.space/api/blocks/";
 const char* bitcoin_price_api_url = "https://api.coindesk.com/v1/bpi/currentprice.json"; 
+
 
 // Default suggested fees
 int fastestFee = 0;
@@ -57,6 +62,18 @@ void setup() {
   // Initialize the buttons
   pinMode(BUTTON_1, INPUT_PULLUP);
   pinMode(BUTTON_2, INPUT_PULLUP);
+  
+  // Connect wifi
+  WiFi.begin(ssid, password);
+  tft.print("connecting");
+  
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(400);
+    tft.print(".");
+   }
+tft.print("CONECTED!!");
+delay(1000);
+
 }
 
 void loop() {
