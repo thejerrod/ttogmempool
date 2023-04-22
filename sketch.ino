@@ -3,8 +3,8 @@
 #include <HTTPClient.h>
 #include <ArduinoJson.h>
 
-#define BUTTON_1 37  // Button 1 pin
-#define BUTTON_2 38  // Button 2 pin
+#define BUTTON_1 35  // Button 1 pin
+#define BUTTON_2 0  // Button 2 pin
 
 // Initialize the TFT display
 TFT_eSPI tft = TFT_eSPI();
@@ -417,3 +417,4 @@ void displayBitcoinPrice() {
   // End the HTTP connection
   http.end();
 }
+
