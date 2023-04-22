@@ -1,5 +1,5 @@
 #include <TFT_eSPI.h>
-#include <SPI.h>
+
 #include <HTTPClient.h>
 #include <ArduinoJson.h>
 
@@ -16,6 +16,7 @@ TFT_eSPI tft = TFT_eSPI();
 #define FASTEST_COLOR TFT_RED
 #define HALF_HOUR_COLOR TFT_ORANGE
 #define HOUR_COLOR TFT_GREEN
+
 
 
 // API URLs
