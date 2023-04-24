@@ -26,8 +26,8 @@ TFT_eSPI tft = TFT_eSPI();
 #define VALUE_COLOR ACCENT_COLOR
 
 // wifi setup
-const char* ssid     = "lulznet";       ///EDIIIT
-const char* password = "lol money, money lol"; //edit
+const char* ssid     = "wifi ssid here";       ///EDIIIT
+const char* password = "wifi password here"; //edit
 
 // API URLs
 const char* mempool_api_url = "https://mempool.space/api/v1/fees/recommended";
@@ -84,6 +84,7 @@ void setup() {
 }
 
 void loop() {
+  updateDisplay();
 }
 
 void updateDisplay(){
@@ -140,11 +141,6 @@ void updateDisplay(){
    case 5:
      // Display capacity growth of the lightning network over time
      displayCapacityGrowth();
-     break;
-
-   case 6:
-     // Display bitcoin price
-     displayBitcoinPrice();
      break;
    }
 }
@@ -215,11 +211,11 @@ void displaySuggestedFees() {
    // Draw the border around the bottom text
    tft.drawRect(borderX, borderY, borderWidth, borderHeight, VALUE_COLOR);
     
-  } else {
-    // If the request failed, display an error message on the TFT display
-    tft.setCursor(0, 0);
-    tft.print("Error: Failed to retrieve suggested fees.");
-  }
+   } else {
+   // If the request failed, display an error message on the TFT display
+   tft.setCursor(0, 0);
+   tft.print("Error: Failed to retrieve suggested fees.");
+ }
 
   // End the HTTP connection
   http.end();
@@ -340,10 +336,10 @@ void displayTransactionVolumeOverTime() {
     // Calculate the y-coordinate for the USD line
     int footerY = titleY + tft.fontHeight(TITLE_SIZE) + 80;
 
-tft.setCursor(footerX, footerY +30); // Draw the footer centered on the x-coordinate +30 padding
+    tft.setCursor(footerX, footerY +30); // Draw the footer centered on the x-coordinate +30 padding
     tft.setTextSize(1);
     tft.print("Last 6 blocks");
-
+  }
   }  else {
     // Display an error message on the TFT display
     tft.setCursor(0, 50);
@@ -597,8 +593,8 @@ void displayBlockHeight() {
     tft.print(updated_time);
 
     // Draw the border around the bottom text
-    tft.drawRect(borderX, borderY, borderWidth, borderHeight, ACCENT_COLOR;
-  }
+    tft.drawRect(borderX, borderY, borderWidth, borderHeight, ACCENT_COLOR);
+  
   
    } else {
      // If the request failed, display an error message on the TFT display
@@ -642,7 +638,7 @@ void displayBitcoinPrice() {
     tft.setCursor(0, 50);
     tft.println("Error: Unable to retrieve bitcoin price");
   }
-}
+
   // End the HTTP connection
   http.end();
 }
