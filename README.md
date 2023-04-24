@@ -31,8 +31,8 @@ After uploading the sketch to your board, the TTGO T-Display should display the 
 
 ### Button Functions
 
-- **Button 1**: Cycles through the different display modes.
-- **Button 2**: Toggles the display of the chart legend in the "Fee Rate Over Time", "Transaction Volume Over Time", and "Capacity Growth" display modes.
+- **Button 1**: Cycles +1 through the different display modes.
+- **Button 2**: Cycles -1 through the different display modes
 
 ## Contributing
 
