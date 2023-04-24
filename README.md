@@ -5,7 +5,7 @@ This is a simple Bitcoin mempool monitor for the TTGO T-Display ESP32. It displa
 ## Installation
 
 1. Clone this repository or download the ZIP file and extract it to your preferred location.
-2. Open the `ttgomempool.ino` file in the Arduino IDE.
+2. Open the `sketch.ino` file in the Arduino IDE.
 3. Connect your TTGO T-Display to your computer using a USB cable.
 4. Select your board and serial port in the Arduino IDE.
 5. Upload the sketch to your board.
