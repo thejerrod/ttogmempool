@@ -26,8 +26,8 @@ TFT_eSPI tft = TFT_eSPI();
 #define VALUE_COLOR ACCENT_COLOR
 
 // wifi setup
-const char* ssid     = "wifi ssid here";       ///EDIIIT
-const char* password = "wifi password here"; //edit
+const char* ssid     = "";       ///EDIT
+const char* password = ""; //EDIT
 
 // API URLs
 const char* mempool_api_url = "https://mempool.space/api/v1/fees/recommended";
@@ -84,7 +84,7 @@ void setup() {
 }
 
 void loop() {
-  updateDisplay();
+  updateDisplay()
 }
 
 void updateDisplay(){
@@ -140,6 +140,11 @@ void updateDisplay(){
 
    case 5:
      // Display capacity growth of the lightning network over time
+     displayCapacityGrowth();
+     break;
+   
+   case 6:
+     // Display lightning node info for pubkey
      displayCapacityGrowth();
      break;
    }
@@ -641,4 +646,90 @@ void displayBitcoinPrice() {
 
   // End the HTTP connection
   http.end();
+}
+
+void nodeBuddy(){
+  // Clear the screen
+  tft.fillScreen(BACKGROUND_COLOR);
+  
+    // Send the API request
+  HTTPClient http;
+  http.begin(lnplus_api_url);
+  int httpCode = http.GET();
+  
+  // If the request was successful, parse the JSON response
+  if (httpCode == HTTP_CODE_OK) {
+    String jsonStr = http.getString();
+    DynamicJsonDocument doc(1024);
+    deserializeJson(doc, jsonStr);
+      
+    // Parse the JSON response
+    String alias = doc["alias"].as<String>();
+    String node_color = doc["color_hex"];
+    String open_channels = doc["open_channels"];
+    String node_capacity = doc["capacity"];
+    String lnp_hubness = doc["weighted_hubness_rank"];
+    String lnp_rank = doc["weighted_hubness_rank"];
+    String lnp_rank_name = doc["lnp_rank_name"].as<String>();
+    String lnp_positive_ratings_received = doc["lnp_positive_ratings_received"].as<String>();
+
+    // Calculate the center x-coordinate for the title
+    int titleWidth = tft.textWidth(alias);
+    int titleX = (tft.width() - titleWidth) / 2;
+
+    // Define the border coordinates
+    int titleY = 1;
+    int borderX = 10;
+    int borderY = titleY + tft.fontHeight(TITLE_SIZE)+30;
+    int borderWidth = tft.width() - 20;
+    int borderHeight = tft.height() - borderY - 5;
+
+    // Calculate the center x-coordinate for the USD line
+    int clearnetWidth = tft.textWidth(alias);
+    int clearnetX = (tft.width() - clearnetWidth) / 2;
+
+    // Calculate the y-coordinate for the "clearnet" line
+    int clearnetY = titleY + tft.fontHeight(TITLE_SIZE) + 45;
+
+    // Display the current bitcoin price on the TFT display
+    tft.setTextSize(VALUE_SIZE);
+    tft.setTextColor(TFT_MAGENTA);
+    tft.setCursor(titleX, titleY); // Draw the title centered on the x-coordinate
+    tft.println(alias);
+    tft.println();
+    
+    tft.setTextSize(1);
+    tft.setTextColor(TITLE_COLOR);
+    tft.setCursor(titleX, titleY + 40);
+    tft.print("Channels: ");
+    tft.println(open_channels);
+    tft.setCursor(titleX, titleY + 50);
+    tft.print("Capacity: ");
+    tft.println(node_capacity);
+    tft.setCursor(titleX, titleY + 60);
+    tft.print("Hubness: ");
+    tft.println(lnp_hubness);
+    tft.setCursor(titleX, titleY + 70);
+    tft.print("Rank: ");
+    tft.println(lnp_rank);
+    tft.setCursor(titleX, titleY + 80);
+    tft.print("Ratings: ");
+    tft.println(lnp_positive_ratings_received);
+    tft.setCursor(titleX, titleY + 90);
+    tft.print("LN+ level: : ");
+    tft.println(lnp_rank_name);
+  
+    // Draw the border around the bottom text
+    tft.drawRect(borderX, borderY, borderWidth, borderHeight, TFT_MAGENTA);
+
+  } else {
+    // If the API request failed, display an error message
+    tft.println("Error: Failed to retrieve Lightning Network statistics");
+  }
+
+  // Clean up
+  http.end();
+}
+
+}
 }
