@@ -23,6 +23,12 @@ After uploading the sketch to your board, the TTGO T-Display should display the 
 - **Transaction Volume Over Time**: Displays a line chart showing the number of transactions confirmed in each block over the past 24 hours.
 - **Capacity Growth**: Displays a line chart showing the growth of Lightning Network capacity over time.
 
+
+<img src="https://user-images.githubusercontent.com/25254103/234098762-939a3abd-ee2c-45bc-b346-d8538aa7ea24.jpg" width=25% height=25%><img src="https://user-images.githubusercontent.com/25254103/234098775-7d7bc25f-78d6-4f7d-81ca-39d5911b9a07.jpg" width=25% height=25%>
+<img src="https://user-images.githubusercontent.com/25254103/234098793-3cf5e738-97c9-4997-aec3-f34b78ebda60.jpg" width=25% height=25%>
+<img src="https://user-images.githubusercontent.com/25254103/234098800-11e4bc66-9b30-4706-9523-2dca9d1bfb2c.jpg" width=25% height=25%><img src="https://user-images.githubusercontent.com/25254103/234098784-277a1de8-28f6-4ee6-adde-aeb251647c7f.jpg" width=25% height=25%>
+
+
 ### Button Functions
 
 - **Button 1**: Cycles through the different display modes.
