@@ -35,6 +35,8 @@ const char* lightning_api_url = "https://mempool.space/api/v1/lightning/statisti
 const char* block_api_url = "https://mempool.space/api/blocks/";
 const char* bitcoin_price_api_url = "https://api.coindesk.com/v1/bpi/currentprice.json"; 
 const char* lightning_api_3m_url = "https://mempool.space/api/v1/lightning/statistics/1w"; 
+const char* lnplus_api_url = "https://lightningnetwork.plus/api/2/get_node/pubkey=0254bb156ecd0eac318844415a91a377bc6947ea4c9fbe5d248e563c29a1662835"; 
+
 
 // Default suggested fees
 int fastestFee = 0;
