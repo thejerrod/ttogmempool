@@ -48,3 +48,9 @@ This project uses the following libraries:
 - [ArduinoJson](https://github.com/bblanchon/ArduinoJson) by Benoit Blanchon
 
 The line charts are generated using the [TFT_eSPI_Graph library](https://github.com/Bodmer/TFT_eSPI_Graph) by Bodmer.
+
+This Project uses the following APIs:
+- [mempool.space api](https://mempool.space/api)
+- [coindesk BPI api](https://api.coindesk.com/v1/bpi/currentprice.json)
+- [LN+ api](https://lightningnetwork.plus/api_documentation)
+
