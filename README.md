@@ -16,11 +16,11 @@ After uploading the sketch to your board, the TTGO T-Display should display the 
 
 ### Display Modes
 
-- **Transaction Count**: Displays the current number of unconfirmed transactions in the Bitcoin mempool.
-- **Suggested Fee Rates**: Displays the current suggested fee rates for Bitcoin transactions, based on their estimated confirmation time.
+- **Tx Count**: Displays the current number of unconfirmed transactions in the Bitcoin mempool.
+- *Feess**: Displays the current suggested fee rates for Bitcoin transactions, based on their estimated confirmation time.
 - **Current Block**: Displays the current block height of the Bitcoin blockchain.
 - **Fee Rate Over Time**: Displays a line chart showing the suggested fee rate over the past 24 hours.
-- **Transaction Volume Over Time**: Displays a line chart showing the number of transactions confirmed in each block over the past 24 hours.
+- **Tx Vol**: Displays a line chart showing the number of transactions confirmed in each block over the past 24 hours and 6 blocks.
 - **Capacity Growth**: Displays a line chart showing the growth of Lightning Network capacity over time.
 
 
