@@ -20,7 +20,7 @@ After uploading the sketch to your board, the TTGO T-Display should display the 
 - **Fees**: Displays the current suggested fee rates for Bitcoin transactions, based on their estimated confirmation time.
 - **Blocks**: Displays the current block height of the Bitcoin blockchain.
 - **Price**: Displays the current BTC price in USD, GBT, EUR.
-- **Tx Vol**: Displays a line chart showing the number of transactions confirmed in each block over the previous 6 blocks.
+- **Tx Vol**: Displays a line chart showing the number of transactions confirmed in each block over the previous 6 blocks. Trends denoted by color.
 - **LN Growth**: Displays a line chart showing the growth of Lightning Network capacity over time.
 - **LN Stats**: Display information about the lightning network like channel count, clear and tor node count, network capacity and median fee rate.
 - **nodeBuddy**: Display stats about a node you specify by pubID.
