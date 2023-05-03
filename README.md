@@ -25,9 +25,17 @@ After uploading the sketch to your board, the TTGO T-Display should display the 
 - **LN Growth**: Displays information showing the growth of Lightning Network capacity over 6 months. Lines for node types overlayed on bars showing capacity.
 - **nodeBuddy**: Display LN+ stats about a node you specify by pubID.
 
-<img src="https://user-images.githubusercontent.com/25254103/234098762-939a3abd-ee2c-45bc-b346-d8538aa7ea24.jpg" width=25% height=25%><img src="https://user-images.githubusercontent.com/25254103/234098775-7d7bc25f-78d6-4f7d-81ca-39d5911b9a07.jpg" width=25% height=25%>
-<img src="https://user-images.githubusercontent.com/25254103/234098793-3cf5e738-97c9-4997-aec3-f34b78ebda60.jpg" width=25% height=25%>
-<img src="https://user-images.githubusercontent.com/25254103/234098800-11e4bc66-9b30-4706-9523-2dca9d1bfb2c.jpg" width=25% height=25%><img src="https://user-images.githubusercontent.com/25254103/234098784-277a1de8-28f6-4ee6-adde-aeb251647c7f.jpg" width=25% height=25%><img src="https://user-images.githubusercontent.com/25254103/234127272-442dccab-d948-4402-a0f2-26b575d2cbd4.jpg" width=25% height=25%>
+
+![image](https://user-images.githubusercontent.com/25254103/235862178-d5e5c0a2-8d42-447d-ad94-d380e95d8a4f.png)
+![image](https://user-images.githubusercontent.com/25254103/235862247-6aa55472-a04e-4a63-b147-7e0e72860682.png)
+![image](https://user-images.githubusercontent.com/25254103/235862272-3a296325-cce6-4c10-ae14-6002987c92aa.png)
+![image](https://user-images.githubusercontent.com/25254103/235862301-9e5f9909-933c-45d1-bb15-eeb52d7269c4.png)
+![image](https://user-images.githubusercontent.com/25254103/235862329-c4de1ba5-1aad-4c68-9943-5bd8ae2bba40.png)
+![image](https://user-images.githubusercontent.com/25254103/235862358-bb9e75d7-ff05-46bf-b34c-f3e1140e8c37.png)
+![image](https://user-images.githubusercontent.com/25254103/235862378-3a433f51-49e3-40ea-88ad-d2c522b28c1a.png)
+
+
+
 
 
 ### Button Functions
