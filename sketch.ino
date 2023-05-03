@@ -2,6 +2,7 @@
 #include <WiFi.h>
 #include <HTTPClient.h>
 #include <ArduinoJson.h>
+#include <RTClib.h>
 
 #define BUTTON_1 35  // Button 1 pin
 #define BUTTON_2 0  // Button 2 pin
@@ -42,7 +43,6 @@ int titleX;
 int titleY;
 int textX;
 int textY;
-
 
 // Button variables
 int button1State;
@@ -93,7 +93,7 @@ void loop() {
  
     case 2:
       // Display the current block info 
-      displayBlockHeight();
+      displayBlocks();
       break;
 
     case 3:
@@ -130,8 +130,6 @@ void displaySuggestedFees() {
   int halfHourFee = doc["halfHourFee"];
   int hourFee = doc["hourFee"];
   int economyFee = doc["economyFee"];
-
-
   String title = "Fees";
   String text = "Text";
   uint16_t color = ACCENT_COLOR;
@@ -158,7 +156,6 @@ void displaySuggestedFees() {
   tft.print("Econ: ");
   tft.print(economyFee);
   tft.println(" sats");
-
 
   delay(5000);
   checkButtonPress(currentDisplay, maxDisplay, lastButtonPress, button1State, button2State);
@@ -195,7 +192,6 @@ void displayLightningStats() {
   tft.setTextSize(TITLE_SIZE);
   //tft.setCursor(textX, textY - 30);
   tft.println(title);
-
   tft.setTextSize(VALUE_SIZE);
   tft.setCursor(textX, textY);
   tft.print("Channels: ");
@@ -223,56 +219,79 @@ void displayLightningStats() {
   currentDisplay++;
 }
 
-void displayBlockHeight() {
+void displayBlocks() {
   // Clear the screen
   tft.fillScreen(BACKGROUND_COLOR);
-
-  String title = "Blocks";
-  String text = "Text";
-  uint16_t color = ACCENT_COLOR;
-  drawBorderText(0, 0, title, text, color);
-  DynamicJsonDocument doc(1024);
+  DynamicJsonDocument doc(2048);
   getData(block_api_url, doc);
+  const size_t num_blocks = doc.size();
 
   // Calculate blocks and time until halving
   int current_block = doc[0]["height"];
+  int tx_count = doc[0]["tx_count"];
   int blocks_since_last_halving = current_block % 210000;
   int blocks_until_halving = 210000 - blocks_since_last_halving;
   int time_until_halving = blocks_until_halving * 10;
+  String title = "Blocks";
+  String text = "Text";
+  uint16_t color = ACCENT_COLOR;
+
+  // Calculate time between blocks
+  int64_t block_time = 0;
+  // look at last 10 blocks
+  int block_count = std::min(doc.size() - 1, static_cast<size_t>(10));
+  for (int i = 0; i < block_count; i++) {
+    int64_t timestamp1 = doc[i]["timestamp"].as<int64_t>();
+    int64_t timestamp2 = doc[i + 1]["timestamp"].as<int64_t>();
+    block_time += (timestamp1 - timestamp2);
+  }
+  block_time /= block_count; // average time between blocks in seconds
+
+  // convert to minutes
+  int block_time_in_minutes = block_time / 60;
+
+  // Get block size in megabytes
+  float block_size_mb = (float)doc[0]["size"].as<int>() / 1000000;
+
+  // Display the current block height and some additional information on the TFT display
+  drawBorderText(0, 0, title, text, color);
+  tft.setTextSize(TITLE_SIZE);
+  tft.setTextColor(TITLE_COLOR);
+  tft.println(title);
+  tft.setTextSize(2);
+  tft.setCursor(15 , 40);
+  tft.print("Current: ");
+  tft.println(current_block);
+  tft.setCursor(15 , 60);
+  tft.print("Block time: ~");
+  tft.print(block_time_in_minutes);
+  tft.print("m");
+  tft.setCursor(40 , 85);
+  tft.print(tx_count);
+  tft.print("tx/");
+  tft.print(block_size_mb);
+  tft.print("MB");
 
   // Calculate progress bar values
   float progress = (float)blocks_since_last_halving / 210000;
-  int progressBarWidth = 100;
+  int progressBarWidth = 120;
   int progressBarHeight = 10;
   int progressBarX = (240 - progressBarWidth) / 2;
-  int progressBarY = 110;
+  int progressBarY = 105;
   int progressFillWidth = (int)(progressBarWidth * progress);
-
-  // Display the current block height and some additional information on the TFT display
-  tft.fillScreen(TFT_BLACK);
-  tft.setTextSize(TITLE_SIZE);
-  tft.setTextColor(TITLE_COLOR);
-
-  tft.println(title);
-  tft.println();
-  tft.setTextSize(1);
-  tft.print("Height: ");
-  tft.println(current_block);
-  tft.print("Until Halving: ");
-  tft.println(blocks_until_halving);
-  tft.print("Time Until Halving: ");
-  tft.print(time_until_halving / 60);
-  tft.print("m ");
-  tft.print(time_until_halving % 60);
-  tft.print("s");
 
   // Draw progress bar
   tft.drawRect(progressBarX, progressBarY, progressBarWidth, progressBarHeight, TFT_LIGHTGREY);
   tft.fillRect(progressBarX, progressBarY, progressFillWidth, progressBarHeight, ACCENT_COLOR);
- 
-    delay(5000);
-    checkButtonPress(currentDisplay, maxDisplay, lastButtonPress, button1State, button2State);
-    currentDisplay++;
+  tft.setTextSize(1);
+  tft.setCursor(progressBarX - 5, progressBarY + 15);
+  tft.print("Halving in ");
+  tft.print(blocks_until_halving);
+  tft.print(" blocks");
+
+  delay(5000);
+  checkButtonPress(currentDisplay, maxDisplay, lastButtonPress, button1State, button2State);
+  currentDisplay++;
 }
 
 void displayBitcoinPrice() {
@@ -282,46 +301,44 @@ void displayBitcoinPrice() {
   DynamicJsonDocument doc(1024);
   getData(bitcoin_price_api_url, doc);
     
-    String updated_time = doc["time"]["updatedISO"];
-    float bitcoin_usd_price = doc["bpi"]["USD"]["rate_float"];
-    float bitcoin_gbp_price = doc["bpi"]["GBP"]["rate_float"];
-    float bitcoin_eur_price = doc["bpi"]["EUR"]["rate_float"];
+  String updated_time = doc["time"]["updatedISO"];
+  float bitcoin_usd_price = doc["bpi"]["USD"]["rate_float"];
+  float bitcoin_gbp_price = doc["bpi"]["GBP"]["rate_float"];
+  float bitcoin_eur_price = doc["bpi"]["EUR"]["rate_float"];
 
-    String title = "Price";
-    String text = "Text";
-    uint16_t color = 0xFFFF;
-    drawBorderText(0, 0, title, text, ACCENT_COLOR);
+  String title = "Price";
+  String text = "Text";
+  uint16_t color = 0xFFFF;
+  drawBorderText(0, 0, title, text, ACCENT_COLOR);
 
     
-    // Display the current bitcoin price on the TFT display
-       //tft.print(lastButtonPress);
-    tft.setTextSize(TITLE_SIZE);
-    tft.setTextColor(TITLE_COLOR);
-    tft.println(title);
-    tft.println();
-    tft.setTextSize(VALUE_SIZE);
-    tft.setTextColor(TITLE_COLOR);
-    tft.setCursor(textX + 30, textY + 40); 
-     tft.print("$");
-    tft.print(bitcoin_usd_price, 2);
-    tft.println(" USD");
-    tft.setCursor(textX + 20, textY + 60); 
-    tft.print("£");
-    tft.print(bitcoin_gbp_price, 2);
-    tft.println(" GBP");
-    tft.setCursor(textX + 20, textY + 80); 
-    tft.print("€");
-    tft.print(bitcoin_eur_price, 2);
-    tft.println(" EUR");
+  // Display the current bitcoin price on the TFT display
+  tft.setTextSize(TITLE_SIZE);
+  tft.setTextColor(TITLE_COLOR);
+  tft.println(title);
+  tft.setTextSize(VALUE_SIZE);
+  tft.setTextColor(TITLE_COLOR);
+  tft.setCursor(textX + 30, textY + 40); 
+  tft.print("$");
+  tft.print(bitcoin_usd_price, 2);
+  tft.println(" USD");
+  tft.setCursor(textX + 20, textY + 60); 
+  tft.print("£");
+  tft.print(bitcoin_gbp_price, 2);
+  tft.println(" GBP");
+  tft.setCursor(textX + 20, textY + 80); 
+  tft.print("€");
+  tft.print(bitcoin_eur_price, 2);
+  tft.println(" EUR");
 
-    //Print updated date
-    tft.setCursor(textX + 20 , textY +120);
-    tft.setTextSize(1);
-    tft.print(updated_time);
+  //Print updated date
+  tft.setCursor(textX + 20 , textY +120);
+  tft.setTextSize(1);
+  tft.print(updated_time);
 
-    delay(5000);
-    checkButtonPress(currentDisplay, maxDisplay, lastButtonPress, button1State, button2State);
-    currentDisplay++;
+  delay(5000);
+  checkButtonPress(currentDisplay, maxDisplay, lastButtonPress, button1State, button2State);
+  currentDisplay++;
 }
 
 void displayTransactionVolumeOverTime() {
@@ -335,10 +352,8 @@ void displayTransactionVolumeOverTime() {
   String text = "Text";
   uint16_t color = TFT_BLACK;
   drawBorderText(0, 0, title, text, color);
-  
   tft.setTextSize(TITLE_SIZE);
   tft.print(title);
- 
   
   // Extract data for each block
   int numBlocks = doc.size();
@@ -368,7 +383,6 @@ void displayTransactionVolumeOverTime() {
   tft.fillRect(0, chartY, tft.width(), chartH, TFT_BLACK);
   tft.drawFastHLine(chartPadding, chartY + chartH - chartPadding, chartW - 2*chartPadding, TFT_WHITE);
   tft.drawFastVLine(chartPadding, chartY + chartH - chartPadding, -chartH + 2*chartPadding, TFT_WHITE);
-
   tft.drawFastVLine(chartPadding, chartY + chartPadding, chartH - 2*chartPadding, TFT_WHITE);
   tft.drawFastHLine(chartPadding, chartY + chartH - chartPadding, chartW - 2*chartPadding, TFT_WHITE);
 
@@ -512,7 +526,6 @@ void displayCapacityGrowth() {
   // Calculate scaling factors for line chart display
   float max_node_count = max(max(max_tor_nodes, max_clearnet_nodes), max(max_unannounced_nodes, max_clearnet_tor_nodes));
   float nodeScaleFactor = (float)(chartHeight - 20) / (float)max_node_count;
-
   int nodeY = 0; 
   int nodeLineWidth = 3;
   int nodeChartX = (capacityChartX / 2 + 50);
@@ -549,12 +562,12 @@ void displayCapacityGrowth() {
     colorIndex++;
     nodeChartY += 10 + 1;
   }
-   tft.setRotation(0);
-   tft.setTextSize(1);
-   tft.setTextColor(TFT_WHITE);
-   tft.setCursor(borderThickness+2,borderThickness+10);
-   tft.print("Capacity");
-   tft.setRotation(1);
+  tft.setRotation(0);
+  tft.setTextSize(1);
+  tft.setTextColor(TFT_WHITE);
+  tft.setCursor(borderThickness+2,borderThickness+10);
+  tft.print("Capacity");
+  tft.setRotation(1);
 
   delay(5000);
   checkButtonPress(currentDisplay, maxDisplay, lastButtonPress, button1State, button2State);
@@ -569,56 +582,55 @@ void nodeBuddy(){
   DynamicJsonDocument doc(2048);
   getData(lnplus_api_url, doc);
 
-    // Parse the JSON response
-    String alias = doc["alias"].as<String>();
-    String node_color = doc["color_hex"];
-    String open_channels = doc["open_channels"];
-    uint64_t total_capacity = doc["capacity"].as<uint64_t>();
-    double total_capacity_btc = total_capacity / 100000000.0;
-    String lnp_hubness = doc["weighted_hubness_rank"];
-    String lnp_rank = doc["weighted_hubness_rank"];
-    String lnp_rank_name = doc["lnp_rank_name"].as<String>();
-    String lnp_positive_ratings_received = doc["lnp_positive_ratings_received"].as<String>();
-    String title = alias;
-    String text = "Text";
-    String color = node_color;   //need to takke this from #xxxx to 0xXXXX
-    drawBorderText(0, 0, title, text, TFT_MAGENTA);
+  // Parse the JSON response
+  String alias = doc["alias"].as<String>();
+  String node_color = doc["color_hex"];
+  String open_channels = doc["open_channels"];
+  uint64_t total_capacity = doc["capacity"].as<uint64_t>();
+  double total_capacity_btc = total_capacity / 100000000.0;
+  String lnp_hubness = doc["weighted_hubness_rank"];
+  String lnp_rank = doc["weighted_hubness_rank"];
+  String lnp_rank_name = doc["lnp_rank_name"].as<String>();
+  String lnp_positive_ratings_received = doc["lnp_positive_ratings_received"].as<String>();
+  String title = alias;
+  String text = "Text";
+  String color = node_color;   //need to takke this from #xxxx to 0xXXXX
+  drawBorderText(0, 0, title, text, TFT_MAGENTA);
     
-    // Display node info 
-    tft.setTextColor(TFT_MAGENTA);
-    tft.setTextSize(VALUE_SIZE);
-    tft.setCursor(titleX, titleY);
-    tft.println(alias);
-    tft.setTextColor(TITLE_COLOR);
-    tft.setTextSize(VALUE_SIZE);
-    tft.setCursor(textX + 20, textY + 35); //  20 padding on the x, 40 on the y
-    tft.print("Channels: ");
-    tft.println(open_channels);
-    tft.setCursor(textX + 20, textY + 50);
-    tft.print("Capacity: ");
-    tft.print(total_capacity_btc);
-    tft.println("B");
-    tft.setCursor(textX + 20, textY + 65);
-    tft.print("Hubness: ");
-    tft.println(lnp_hubness);
-    tft.setCursor(textX + 20, textY + 80);
-    tft.print("Rank: ");
-    tft.println(lnp_rank);
-    tft.setCursor(textX + 20, textY + 95);
-    tft.print("Ratings: ");
-    tft.println(lnp_positive_ratings_received);
-    tft.setCursor(textX + 20, textY + 110);
-    tft.print("LN+ level:");
-    tft.setTextColor(0xffda24);
-    tft.println(lnp_rank_name);
-  
-    delay(5000);
-    checkButtonPress(currentDisplay, maxDisplay, lastButtonPress, button1State, button2State);
-    currentDisplay = 0;
+   // Display node info 
+  tft.setTextColor(TFT_MAGENTA);
+  tft.setTextSize(VALUE_SIZE);
+  tft.setCursor(titleX, titleY);
+  tft.println(alias);
+  tft.setTextColor(TITLE_COLOR);
+  tft.setTextSize(VALUE_SIZE);
+  tft.setCursor(textX + 20, textY + 35); //  20 padding on the x, 40 on the y
+  tft.print("Channels: ");
+  tft.println(open_channels);
+  tft.setCursor(textX + 20, textY + 50);
+  tft.print("Capacity: ");
+  tft.print(total_capacity_btc);
+  tft.println("B");
+  tft.setCursor(textX + 20, textY + 65);
+  tft.print("Hubness: ");
+  tft.println(lnp_hubness);
+  tft.setCursor(textX + 20, textY + 80);
+  tft.print("Rank: ");
+  tft.println(lnp_rank);
+  tft.setCursor(textX + 20, textY + 95);
+  tft.print("Ratings: ");
+  tft.println(lnp_positive_ratings_received);
+  tft.setCursor(textX + 20, textY + 110);
+  tft.print("LN+ level:");
+  tft.setTextColor(0xffda24);
+  tft.println(lnp_rank_name);
+ 
+  delay(5000);
+  checkButtonPress(currentDisplay, maxDisplay, lastButtonPress, button1State, button2State);
+  currentDisplay = 0;
 }
 
 //////////tools
-
 void checkButtonPress(int& currentDisplay, int maxDisplay, unsigned long& lastButtonPress, int& button1State, int& button2State) {
   // Get the current time
   unsigned long currentTime = millis();
