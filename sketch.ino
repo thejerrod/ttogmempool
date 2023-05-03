@@ -26,33 +26,23 @@ TFT_eSPI tft = TFT_eSPI();
 #define VALUE_COLOR ACCENT_COLOR
 
 // wifi setup
-const char* ssid     = "";       ///EDIT
-const char* password = ""; //EDIT
+const char* ssid     = "lulznet";       ///EDIT
+const char* password = "lol money, money lol"; //EDIT
 
 // API URLs
 const char* mempool_api_url = "https://mempool.space/api/v1/fees/recommended";
 const char* lightning_api_url = "https://mempool.space/api/v1/lightning/statistics/latest";
 const char* block_api_url = "https://mempool.space/api/blocks/";
 const char* bitcoin_price_api_url = "https://api.coindesk.com/v1/bpi/currentprice.json"; 
-const char* lightning_api_3m_url = "https://mempool.space/api/v1/lightning/statistics/1w"; 
+const char* lightning_api_3m_url = "https://mempool.space/api/v1/lightning/statistics/3m"; 
 const char* lnplus_api_url = "https://lightningnetwork.plus/api/2/get_node/pubkey=0254bb156ecd0eac318844415a91a377bc6947ea4c9fbe5d248e563c29a1662835"; 
 
+//screen setup
+int titleX;
+int titleY;
+int textX;
+int textY;
 
-// Default suggested fees
-int fastestFee = 0;
-int halfHourFee = 0;
-int hourFee = 0;
-int economyFee = 0;
-
-// Lightning network statistics
-int channel_count = 0;
-int clearnet_nodes = 0;
-int tor_nodes = 0;
-int total_capacity = 0;
-int med_fee_rate = 0;
-
-// Current block height
-int current_block = 0;
 
 // Button variables
 int button1State;
@@ -86,166 +76,270 @@ void setup() {
 }
 
 void loop() {
-  updateDisplay()
-}
+  
+  //checkButtonPress(currentDisplay, maxDisplay, lastButtonPress, button1State, button2State);
 
-void updateDisplay(){
- // Get the current time
-  unsigned long currentTime = millis();
+  // Display the current page
+  switch (currentDisplay) {
+    case 0:
+      // Display the suggested fees
+      displaySuggestedFees();
+      break;
 
- // Check if button 1 was pressed
- button1State = digitalRead(BUTTON_1);
- if (button1State == LOW && currentTime - lastButtonPress > 50000) {
-   currentDisplay--;
-   if (currentDisplay < 0) {
-     currentDisplay = maxDisplay;
-   }
-   lastButtonPress = currentTime;
- }
+    case 1:
+      // Display the lightning network statistics 
+      displayLightningStats();
+      break; 
+ 
+    case 2:
+      // Display the current block info 
+      displayBlockHeight();
+      break;
 
- // Check if button 2 was pressed
- button2State = digitalRead(BUTTON_2);
- if (button2State == LOW && currentTime - lastButtonPress > 50000) {
-   currentDisplay++;
-   if (currentDisplay > maxDisplay) {
-     currentDisplay = 0;
-   }
-   lastButtonPress = currentTime;
- }
+    case 3:
+      // Disply the current bitcoin price index
+      displayBitcoinPrice();
+      break; 
 
- // Display the current page
- switch (currentDisplay) {
-   case 0:
-     // Display the suggested fees on the TFT display using the TFT_eSPI library
-     displaySuggestedFees();
-     break;
+    case 4:
+      // Display transaction volume over time
+      displayTransactionVolumeOverTime();
+      break;
 
-   case 1:
-     // Display the lightning network statistics on the TFT display using the TFT_eSPI library
-     displayLightningStats();
-     break;
-
-   case 2:
-     // Display the current block height on the TFT display using the TFT_eSPI library
-     displayBlockHeight();
-     break;
-
-   case 3:
-     // Disply the current bitcoin price index
-     displayBitcoinPrice();
-     break;
-
-   case 4:
-     // Display transaction volume over time
-     displayTransactionVolumeOverTime();
-     break;
-
-   case 5:
-     // Display capacity growth of the lightning network over time
-     displayCapacityGrowth();
-     break;
+    case 5:
+      // Display capacity growth of the lightning network over time
+      displayCapacityGrowth();
+      break;
    
-   case 6:
-     // Display lightning node info for pubkey
-     displayCapacityGrowth();
-     break;
-   }
-}
+    case 6:
+      // Display  node info for lightning pubkey
+      nodeBuddy();
+      break;
+    }
+ }
   
 void displaySuggestedFees() {
   // Clear the screen
   tft.fillScreen(BACKGROUND_COLOR);
+  
+  DynamicJsonDocument doc(1024);
+  getData(mempool_api_url, doc);
 
-  // Send the API request
-  HTTPClient http;
-  http.begin(mempool_api_url);
-  int httpCode = http.GET();
+  // Parse the JSON response
+  int fastestFee = doc["fastestFee"];
+  int halfHourFee = doc["halfHourFee"];
+  int hourFee = doc["hourFee"];
+  int economyFee = doc["economyFee"];
 
-  // If the request was successful, parse the JSON response
-  if (httpCode == HTTP_CODE_OK) {
-    String jsonStr = http.getString();
-    DynamicJsonDocument doc(1024);
-    deserializeJson(doc, jsonStr);
 
-    // Parse the JSON response
-    fastestFee = doc["fastestFee"];
-    halfHourFee = doc["halfHourFee"];
-    hourFee = doc["hourFee"];
-    economyFee = doc["economyFee"];
+  String title = "Fees";
+  String text = "Text";
+  uint16_t color = ACCENT_COLOR;
+  drawBorderText(0, 0, title, text, color);
     
-    // Calculate the center x-coordinate for the title
-   int titleWidth = tft.textWidth("Fees");
-   int titleX = (tft.width() - titleWidth) / 2;
+  tft.setTextColor(TITLE_COLOR);
+  tft.setTextSize(TITLE_SIZE);
+  tft.println(title);
+  tft.setTextColor(TITLE_COLOR);
+  tft.setTextSize(VALUE_SIZE);
+  tft.setCursor(textX + 20, textY + 40); //  20 padding on the x, 40 on the y
+  tft.print("Fast: ");
+  tft.print(fastestFee);  
+  tft.println(" sats");
+  tft.setCursor(textX + 20, textY + 60);
+  tft.print("30m: ");
+  tft.print(halfHourFee);
+  tft.println(" sats");
+  tft.setCursor(textX + 20, textY + 80); 
+  tft.print("60m: ");
+  tft.print(hourFee);
+  tft.println(" sats");
+  tft.setCursor(textX + 20, textY + 100); 
+  tft.print("Econ: ");
+  tft.print(economyFee);
+  tft.println(" sats");
 
-   // Calculate the center x-coordinate for the "Fastest" line
-   int fastestWidth = tft.textWidth("$" + String(fastestFee, 2) + " USD");
-   int fastestX = (tft.width() - fastestWidth) / 2;
 
-   // Calculate the y-coordinate for the Fastest line
-   int titleY = 1;
-   int fastestY = titleY + tft.fontHeight(TITLE_SIZE) + 45;
-
-   // Define the border coordinates
-   int borderX = 10;
-   int borderY = titleY + tft.fontHeight(TITLE_SIZE)+30;
-   int borderWidth = tft.width() - 20;
-   int borderHeight = tft.height() - borderY - 5;
-
-   // Display the fees
-   tft.setTextColor(TITLE_COLOR);
-   tft.setTextSize(TITLE_SIZE);
-   tft.setCursor(titleX, titleY); //centered 
-   tft.println("Fees");
-   tft.setTextColor(TITLE_COLOR);
-   tft.setTextSize(VALUE_SIZE);
-   tft.setCursor(fastestX, fastestY); // Draw the "Fastest" line centered on the x-coordinate
-   tft.print("Fast: ");
-   tft.print(fastestFee);
-   tft.println(" sats");
-   tft.setCursor(fastestX, fastestY  +20); // Draw the "Fastest" line centered on the x-coordinate
-   tft.print("30m: ");
-   tft.print(halfHourFee);
-   tft.println(" sats");
-   tft.setCursor(fastestX, fastestY +40); // Draw the "Fastest" line centered on the x-coordinate
-   tft.print("60m: ");
-   tft.print(hourFee);
-   tft.println(" sats");
-   tft.setCursor(fastestX, fastestY +60); // Draw the "Fastest" line centered on the x-coordinate
-   tft.print("Econ: ");
-   tft.print(economyFee);
-   tft.println(" sats");
-   
-   // Draw the border around the bottom text
-   tft.drawRect(borderX, borderY, borderWidth, borderHeight, VALUE_COLOR);
-    
-   } else {
-   // If the request failed, display an error message on the TFT display
-   tft.setCursor(0, 0);
-   tft.print("Error: Failed to retrieve suggested fees.");
- }
-
-  // End the HTTP connection
-  http.end();
+  delay(5000);
+  checkButtonPress(currentDisplay, maxDisplay, lastButtonPress, button1State, button2State);
+  currentDisplay++;
+  
 }
 
+void displayLightningStats() {
+  // Clear the screen
+  tft.fillScreen(BACKGROUND_COLOR);
+
+  DynamicJsonDocument doc(1024);
+  getData(lightning_api_url, doc);
+
+  // Parse the JSON response
+  int channel_count = doc["latest"]["channel_count"].as<int>();
+  int clearnet_nodes = doc["latest"]["clearnet_nodes"].as<int>();
+  int tor_nodes = doc["latest"]["tor_nodes"].as<int>();
+  uint64_t total_capacity = doc["latest"]["total_capacity"].as<uint64_t>();
+  double total_capacity_btc = total_capacity / 100000000.0;
+  int med_fee_rate = doc["latest"]["med_fee_rate"].as<int>();
+
+  // Draw the title border
+  String title = "LN Stats";
+  String text = "Channels: " + String(channel_count);
+  uint16_t color = ACCENT_COLOR;
+  drawBorderText(0, 0, title, text, color);
+
+  // Display the data values
+  const int textX = 20;
+  const int textY = 40;
+  const int lineHeight = 18;
+  tft.setTextColor(TITLE_COLOR);
+  tft.setTextSize(TITLE_SIZE);
+  //tft.setCursor(textX, textY - 30);
+  tft.println(title);
+
+  tft.setTextSize(VALUE_SIZE);
+  tft.setCursor(textX, textY);
+  tft.print("Channels: ");
+  tft.println(channel_count);
+
+  tft.setCursor(textX, textY + lineHeight);
+  tft.print("Clear nodes: ");
+  tft.println(clearnet_nodes);
+
+  tft.setCursor(textX, textY + 2 * lineHeight);
+  tft.print("Tor nodes: ");
+  tft.println(tor_nodes);
+
+  tft.setCursor(textX, textY + 3 * lineHeight);
+  tft.print("BTC: ");
+  tft.println(total_capacity_btc);
+
+  tft.setCursor(textX, textY + 4 * lineHeight);
+  tft.print("Fee rate: ");
+  tft.print(med_fee_rate);
+  tft.println(" sats");
+
+  delay(5000);
+  checkButtonPress(currentDisplay, maxDisplay, lastButtonPress, button1State, button2State);
+  currentDisplay++;
+}
+
+void displayBlockHeight() {
+  // Clear the screen
+  tft.fillScreen(BACKGROUND_COLOR);
+
+  String title = "Blocks";
+  String text = "Text";
+  uint16_t color = ACCENT_COLOR;
+  drawBorderText(0, 0, title, text, color);
+  DynamicJsonDocument doc(1024);
+  getData(block_api_url, doc);
+
+  // Calculate blocks and time until halving
+  int current_block = doc[0]["height"];
+  int blocks_since_last_halving = current_block % 210000;
+  int blocks_until_halving = 210000 - blocks_since_last_halving;
+  int time_until_halving = blocks_until_halving * 10;
+
+  // Calculate progress bar values
+  float progress = (float)blocks_since_last_halving / 210000;
+  int progressBarWidth = 100;
+  int progressBarHeight = 10;
+  int progressBarX = (240 - progressBarWidth) / 2;
+  int progressBarY = 110;
+  int progressFillWidth = (int)(progressBarWidth * progress);
+
+  // Display the current block height and some additional information on the TFT display
+  tft.fillScreen(TFT_BLACK);
+  tft.setTextSize(TITLE_SIZE);
+  tft.setTextColor(TITLE_COLOR);
+
+  tft.println(title);
+  tft.println();
+  tft.setTextSize(1);
+  tft.print("Height: ");
+  tft.println(current_block);
+  tft.print("Until Halving: ");
+  tft.println(blocks_until_halving);
+  tft.print("Time Until Halving: ");
+  tft.print(time_until_halving / 60);
+  tft.print("m ");
+  tft.print(time_until_halving % 60);
+  tft.print("s");
+
+  // Draw progress bar
+  tft.drawRect(progressBarX, progressBarY, progressBarWidth, progressBarHeight, TFT_LIGHTGREY);
+  tft.fillRect(progressBarX, progressBarY, progressFillWidth, progressBarHeight, ACCENT_COLOR);
+ 
+    delay(5000);
+    checkButtonPress(currentDisplay, maxDisplay, lastButtonPress, button1State, button2State);
+    currentDisplay++;
+}
+
+void displayBitcoinPrice() {
+  // Clear the screen
+  tft.fillScreen(BACKGROUND_COLOR);
+
+  DynamicJsonDocument doc(1024);
+  getData(bitcoin_price_api_url, doc);
+    
+    String updated_time = doc["time"]["updatedISO"];
+    float bitcoin_usd_price = doc["bpi"]["USD"]["rate_float"];
+    float bitcoin_gbp_price = doc["bpi"]["GBP"]["rate_float"];
+    float bitcoin_eur_price = doc["bpi"]["EUR"]["rate_float"];
+
+    String title = "Price";
+    String text = "Text";
+    uint16_t color = 0xFFFF;
+    drawBorderText(0, 0, title, text, ACCENT_COLOR);
+
+    
+    // Display the current bitcoin price on the TFT display
+       //tft.print(lastButtonPress);
+    tft.setTextSize(TITLE_SIZE);
+    tft.setTextColor(TITLE_COLOR);
+    tft.println(title);
+    tft.println();
+    tft.setTextSize(VALUE_SIZE);
+    tft.setTextColor(TITLE_COLOR);
+    tft.setCursor(textX + 30, textY + 40); 
+     tft.print("$");
+    tft.print(bitcoin_usd_price, 2);
+    tft.println(" USD");
+    tft.setCursor(textX + 20, textY + 60); 
+    tft.print("£");
+    tft.print(bitcoin_gbp_price, 2);
+    tft.println(" GBP");
+    tft.setCursor(textX + 20, textY + 80); 
+    tft.print("€");
+    tft.print(bitcoin_eur_price, 2);
+    tft.println(" EUR");
+
+    //Print updated date
+    tft.setCursor(textX + 20 , textY +120);
+    tft.setTextSize(1);
+    tft.print(updated_time);
+
+    delay(5000);
+    checkButtonPress(currentDisplay, maxDisplay, lastButtonPress, button1State, button2State);
+    currentDisplay++;
+}
 
 void displayTransactionVolumeOverTime() {
   // Clear the screen
   tft.fillScreen(BACKGROUND_COLOR);
- 
-  // Initialize HTTP client and JSON document
-  HTTPClient http;
+   
   DynamicJsonDocument doc(2048);
+  getData(block_api_url, doc);
 
-  // Send request to mempool.space API
-  http.begin(block_api_url);
-  int httpCode = http.GET();
-
-  // If request was successful, parse JSON data
-  if (httpCode == HTTP_CODE_OK) {
-  String jsonStr = http.getString();
-  deserializeJson(doc, jsonStr);
-
+  String title = "TX Vol";
+  String text = "Text";
+  uint16_t color = TFT_BLACK;
+  drawBorderText(0, 0, title, text, color);
+  
+  tft.setTextSize(TITLE_SIZE);
+  tft.print(title);
+ 
+  
   // Extract data for each block
   int numBlocks = doc.size();
   int maxTxs = 0;
@@ -270,18 +364,11 @@ void displayTransactionVolumeOverTime() {
   // Define color gradient
   uint16_t gradient[] = {TFT_RED, TFT_ORANGE, TFT_YELLOW, TFT_GREEN};
 
-  // Calculate the center x-coordinate for the title
-  int titleWidth = tft.textWidth("Tx Vol");
-  int titleX = (tft.width() - titleWidth) / 2;
-
   // Draw chart axis and labels
   tft.fillRect(0, chartY, tft.width(), chartH, TFT_BLACK);
-  //tft.drawFastHLine(chartPadding, chartY + chartH - chartPadding, chartW - 2*chartPadding, TFT_WHITE);
-  //tft.drawFastVLine(chartPadding, chartY + chartH - chartPadding, -chartH + 2*chartPadding, TFT_WHITE);
-  tft.setTextSize(TITLE_SIZE);
-  tft.setTextColor(TITLE_COLOR);
-  tft.setCursor(titleX, 1); // Draw the title centered on the x-coordinate
-  tft.print("Tx Vol");
+  tft.drawFastHLine(chartPadding, chartY + chartH - chartPadding, chartW - 2*chartPadding, TFT_WHITE);
+  tft.drawFastVLine(chartPadding, chartY + chartH - chartPadding, -chartH + 2*chartPadding, TFT_WHITE);
+
   tft.drawFastVLine(chartPadding, chartY + chartPadding, chartH - 2*chartPadding, TFT_WHITE);
   tft.drawFastHLine(chartPadding, chartY + chartH - chartPadding, chartW - 2*chartPadding, TFT_WHITE);
 
@@ -296,18 +383,14 @@ void displayTransactionVolumeOverTime() {
   for (int i = 0; i <= numLines; i++) {
   int y = chartY + chartH - chartPadding - i*chartH/numLines;
   tft.drawFastHLine(chartPadding, y, chartW - 2*chartPadding, TFT_LIGHTGREY);
-  tft.setCursor(chartPadding + 4, y - 4);
-  // tft.print(String(i*maxTxs/numLines) + " tx");
+  tft.setCursor(chartPadding + 4, y - 4);  
   }
 
   // Draw vertical grid lines
   for (int i = 0; i < numPoints; i++) {
   int x = chartPadding + i*xStep;
   tft.drawFastVLine(x, chartY + chartPadding, chartH - 2*chartPadding, TFT_LIGHTGREY);
-  
-  // Add tick marks on x-axis
-  // tft.drawFastVLine(x, chartY + chartH - chartPadding, 5, TFT_WHITE);
- }
+  }
 
   // Draw chart line with color gradient
   for (int i = 0; i < numPoints-1; i++) {
@@ -329,12 +412,10 @@ void displayTransactionVolumeOverTime() {
     tft.drawLine(x1, y1, x2, y2, color);
     tft.fillCircle(x1, y1, 3, color);
   }
-  // Draw last data point
-  float x = chartPadding + (numPoints-1)*xStep;
-  float y = chartY + chartH - chartPadding - yScale*txsPerBlock[numPoints-1];
-  tft.fillCircle(x, y, 3, TFT_ORANGE);
-
-//footer
+    // Draw last data point
+    float x = chartPadding + (numPoints-1)*xStep;
+    float y = chartY + chartH - chartPadding - yScale*txsPerBlock[numPoints-1];
+    tft.fillCircle(x, y, 3, TFT_ORANGE);
 
     // Calculate the center x-coordinate for the footer line
     int footerWidth = tft.textWidth("Last 6 blocks");
@@ -345,393 +426,262 @@ void displayTransactionVolumeOverTime() {
 
     tft.setCursor(footerX, footerY +30); // Draw the footer centered on the x-coordinate +30 padding
     tft.setTextSize(1);
-    tft.print("Last 6 blocks");
+    tft.print("Last ");
+    tft.print(numBlocks);
+    tft.print(" blocks");
   }
-  }  else {
-    // Display an error message on the TFT display
-    tft.setCursor(0, 50);
-    tft.println("Error: Unable to retrieve bitcoin price");
-  }
-  
-  // Clean up
-  http.end();
-}
-
-
-void displayLightningStats() {
-
-  // Clear the screen
-  tft.fillScreen(BACKGROUND_COLOR);
-
-
-  // Send the API request
-  HTTPClient http;
-  http.begin(lightning_api_url);
-  int httpCode = http.GET();
-  
-  // If the request was successful, parse the JSON response
-  if (httpCode == HTTP_CODE_OK) {
-    String jsonStr = http.getString();
-    DynamicJsonDocument doc(1024);
-    deserializeJson(doc, jsonStr);
-      
-    // Parse the JSON response
-    channel_count = doc["latest"]["channel_count"];
-    clearnet_nodes = doc["latest"]["clearnet_nodes"];
-    tor_nodes = doc["latest"]["tor_nodes"];
-    total_capacity = doc["latest"]["total_capacity"];
-    med_fee_rate = doc["latest"]["med_fee_rate"];
-
-    // Calculate the center x-coordinate for the title
-    int titleWidth = tft.textWidth("Tx Vol");
-    int titleX = (tft.width() - titleWidth) / 2;
-
-    // Define the border coordinates
-    int titleY = 1;
-    int borderX = 10;
-    int borderY = titleY + tft.fontHeight(TITLE_SIZE)+30;
-    int borderWidth = tft.width() - 20;
-    int borderHeight = tft.height() - borderY - 5;
-
-    // Calculate the center x-coordinate for the USD line
-    int clearnetWidth = tft.textWidth("Clearnet nodes: ");
-    int clearnetX = (tft.width() - clearnetWidth) / 2;
-
-    // Calculate the y-coordinate for the "clearnet" line
-    int clearnetY = titleY + tft.fontHeight(TITLE_SIZE) + 45;
-
-    // Display the current block height and some additional information on the TFT display
-    tft.setTextSize(TITLE_SIZE);
-    tft.setTextColor(TITLE_COLOR);
-    tft.setCursor(titleX -40 , titleY ); // Draw the title centered on the x-coordinate
-    tft.println("Lightning");
-    tft.println();
-    tft.setCursor(clearnetX, clearnetY);
-    tft.setTextSize(1);
-    tft.setTextColor(TITLE_COLOR);
-    tft.print("Channels: ");
-    tft.println(channel_count);
-    tft.setCursor(clearnetX, clearnetY +10);
-    tft.print("Clearnet: ");
-    tft.println(clearnet_nodes);
-    tft.setCursor(clearnetX, clearnetY +20);
-    tft.print("tor: ");
-    tft.println(tor_nodes);
-    tft.setCursor(clearnetX, clearnetY +30);
-    tft.print("Capacity: ");
-    tft.print(total_capacity);
-    tft.println("sats");
-    tft.setCursor(clearnetX, clearnetY +40 );
-    tft.print("Median Fee: ");
-    tft.print(med_fee_rate);
-    tft.println("sats");
-    
-    // Draw the border around the bottom text
-    tft.drawRect(borderX, borderY, borderWidth, borderHeight, VALUE_COLOR);
-
-  } else {
-    // If the API request failed, display an error message
-    tft.println("Error: Failed to retrieve Lightning Network statistics");
-  }
-
-  // Clean up
-  http.end();
+    delay(5000);
+    checkButtonPress(currentDisplay, maxDisplay, lastButtonPress, button1State, button2State);
+    currentDisplay++;
 }
 
 void displayCapacityGrowth() {
-  ////broke
   // Clear the screen
   tft.fillScreen(BACKGROUND_COLOR);
 
-  // Send the API request
-  HTTPClient http;
-  http.begin(lightning_api_3m_url);
-  int httpCode = http.GET();
+  // Send the API request and parse the response
+  DynamicJsonDocument doc(4096);
+  getData(lightning_api_3m_url, doc);
 
-  // If the request was successful, parse the JSON response
-  if (httpCode == HTTP_CODE_OK) {
-    String jsonStr = http.getString();
-    DynamicJsonDocument doc(1024);
-    deserializeJson(doc, jsonStr);
+  // Calculate some variables for chart display
+  String title = "LN Growth";
+  String text = "Text";
+  int chartWidth = 200;
+  int chartHeight = 55;
+  int chartMargin = 1;
+  int borderThickness = 10;
+  const float SMOOTHING_FACTOR = .5;
+  int numInstances = doc.size();
 
-    // Get the array of objects
-    JsonArray data = doc.as<JsonArray>();
-
-    // Create an array to store the total capacity values
-    int numPoints = data.size();
-    int totalCapacity[numPoints];
-
-  // Loop through the array and extract the total_capacity value from each object
-  for (int i = 0; i < numPoints; i++) {
-    totalCapacity[i] = data[i]["total_capacity"].as<int>();
-  }
-
-// Calculate the width of each bar based on the number of data points and screen width
-  int barWidth = 240 / numPoints - 1; // subtract 1 for the space between bars
-
-// Find the maximum value of the y-axis data
-  int maxVal = 0;
-  for (int i = 0; i < numPoints; i++) {
-    int yVal = doc[i]["total_capacity"].as<int>() / 1000000000;
-    if (yVal > maxVal) {
-      maxVal = yVal;
+  // Find the maximum values for capacity and node count
+  uint64_t max_capacity = 0;
+  uint64_t max_nodes = 0;
+  uint64_t max_tor_nodes = 0;
+  uint64_t max_clearnet_nodes = 0;
+  uint64_t max_unannounced_nodes = 0;
+  uint64_t max_clearnet_tor_nodes = 0;
+  for (JsonVariant instance : doc.as<JsonArray>()) {
+    uint64_t total_capacity = instance["total_capacity"];
+    if (total_capacity > max_capacity) {
+      max_capacity = total_capacity;
+    }
+    uint64_t total_nodes = instance["channel_count"];
+    if (total_nodes > max_nodes) {
+      max_nodes = total_nodes;
+    }
+    uint64_t tor_nodes_count = instance["tor_nodes"];
+    uint64_t clearnet_nodes_count = instance["clearnet_nodes"];
+    uint64_t unannounced_nodes_count = instance["unannounced_nodes"];
+    uint64_t clearnet_tor_nodes_count = instance["clearnet_tor_nodes"];
+    if (tor_nodes_count > max_tor_nodes) {
+      max_tor_nodes = tor_nodes_count;
+    }
+    if (clearnet_nodes_count > max_clearnet_nodes) {
+      max_clearnet_nodes = clearnet_nodes_count;
+    }
+    if (unannounced_nodes_count > max_unannounced_nodes) {
+      max_unannounced_nodes = unannounced_nodes_count;
+    }
+    if (clearnet_tor_nodes_count > max_clearnet_tor_nodes) {
+      max_clearnet_tor_nodes = clearnet_tor_nodes_count;
     }
   }
 
-// Loop through each data point and draw a bar
-for (int i = 0; i < numPoints; i++) {
-  // Get the value for the current data point
-  int yVal = doc[i]["total_capacity"].as<int>() / 1000000000;
+  // Calculate scaling factors for bar chart display
+  float capacityScaleFactor = (float)chartHeight / (float)max_capacity;
 
-  // Map the y-value to fit within the display range
-  int y = map(yVal, 0, maxVal * 1.2, 120, 10);
-
-  // Calculate the x-coordinate for the current bar based on its position in the loop and the width of each bar
-  int x = i * (barWidth + 1); // add 1 for the space between bars
- 
-  // Draw a rectangle to represent the current bar
-  tft.fillRect(x, 120 - y, barWidth, y, TFT_WHITE);
-  //tft.fillRect(10, 120, 10, 50, TFT_WHITE); 
-
-  // Add a label for the current bar indicating its position in the loop (1-based index)
-  tft.setTextColor(TFT_WHITE);
-  tft.setTextSize(1);
-  tft.setCursor(x + 2, 123);
-  tft.print(i+1);
-
-  // Add a label for the y value of the current bar
-  tft.setCursor(x + 2, 110 - y);
-  tft.print(yVal);
-
-   // Print the JSON output for the current data point to the display
-  String jsonOutput = "Data point " + String(i+1) + ": " + String(yVal);
-  tft.setTextColor(TFT_WHITE);
-  tft.setTextSize(1);
-  tft.setCursor(0, 0);
-  tft.print(jsonOutput);
-
+  drawBorderText(0, 0, title, text, ACCENT_COLOR);
   // Add labels and title to the graph
-  tft.setTextColor(TFT_ORANGE);
-  tft.setTextSize(1); 
-  tft.drawString("Capacity Growth", 10, 15, 2);
-  tft.drawString("Days", 110, 110);
-  tft.drawString("Sats", 50, 50, 2);
-}
-  } else {
-    // If the request failed, display an error message on the TFT display
-    tft.print("Error: Failed to retrieve capacity statsistics.");
+  tft.setTextColor(TFT_WHITE);
+  tft.setTextSize(TITLE_SIZE);
+  tft.print(title);
+
+  // Draw the capacity bar chart
+  int capacityBarWidth = (chartWidth - (numInstances - 1) * chartMargin) / numInstances;
+  int capacityChartX = (TFT_HEIGHT - chartWidth) / 2;
+  int capacityChartY = (115 - chartHeight) + borderThickness;
+  int capacityBarX = capacityChartX + borderThickness;
+  for (int i = 0; i < numInstances; i++) {
+    uint64_t capacity = doc[i]["total_capacity"].as<uint64_t>();
+    int capacityBarHeight = (int)(capacity * capacityScaleFactor);
+    int capacityBarY = capacityChartY + chartHeight - capacityBarHeight;
+    tft.fillRect(capacityBarX, capacityBarY, capacityBarWidth, capacityBarHeight, TFT_BLUE);
+    capacityBarX += capacityBarWidth + chartMargin;
   }
-  // clean up
-  http.end();
-}
 
+  // Calculate scaling factors for line chart display
+  float max_node_count = max(max(max_tor_nodes, max_clearnet_nodes), max(max_unannounced_nodes, max_clearnet_tor_nodes));
+  float nodeScaleFactor = (float)(chartHeight - 20) / (float)max_node_count;
 
-void displayBlockHeight() {
-  // Clear the screen
-  tft.fillScreen(BACKGROUND_COLOR);
-
-  // Send the API request
-  HTTPClient http;
-  http.begin(bitcoin_price_api_url);
-  int httpCode = http.GET();
-
-  // Check if the request was successful
-  if (httpCode == 200) {
-    // Parse the JSON response
-    String response = http.getString();
-    DynamicJsonDocument doc(1024);
-    deserializeJson(doc, response);
-
-    // Get the updated time
-    String updated_time = doc["time"]["updatedISO"];
-    
-    // Get the current bitcoin price from the response
-    float bitcoin_usd_price = doc["bpi"]["USD"]["rate_float"];
-    float bitcoin_gbp_price = doc["bpi"]["GBP"]["rate_float"];
-    float bitcoin_eur_price = doc["bpi"]["EUR"]["rate_float"];
-
-    // Calculate the center x-coordinate for the title
-    int titleWidth = tft.textWidth("Price");
-    int titleX = (tft.width() - titleWidth) / 2;
-
-    // Calculate the y-coordinate for the title
-    int titleY = 1;
-
-    // Calculate the center x-coordinate for the USD line
-    int usdWidth = tft.textWidth("$" + String(bitcoin_usd_price, 2) + " USD");
-    int usdX = (tft.width() - usdWidth) / 2;
-
-    // Calculate the y-coordinate for the USD line
-    int usdY = titleY + tft.fontHeight(TITLE_SIZE) + 45;
-
-
-    // Define the border coordinates
-    int borderX = 10;
-    int borderY = titleY + tft.fontHeight(TITLE_SIZE)+30;
-    int borderWidth = tft.width() - 20;
-    int borderHeight = tft.height() - borderY - 5;
-
-    // Display the current bitcoin price on the TFT display
-    tft.setTextSize(TITLE_SIZE);
-    tft.setTextColor(TITLE_COLOR);
-    tft.setCursor(titleX, titleY); // Draw the title centered on the x-coordinate
-    tft.println("Price");
-    tft.println();
-
-    tft.setTextSize(VALUE_SIZE);
-    tft.setTextColor(TITLE_COLOR);
-    tft.setCursor(usdX, usdY); // Draw the USD line centered on the x-coordinate
-    tft.print("$");
-    tft.print(bitcoin_usd_price, 2);
-    tft.println(" USD");
-    tft.setCursor(usdX, usdY +20); // Draw the GBP line centered on the x-coordinate +20 padding
-    tft.print("£");
-    tft.print(bitcoin_gbp_price, 2);
-    tft.println(" GBP");
-    tft.setCursor(usdX, usdY +40); // Draw the EUR line centered on the x-coordinate +40 padding
-    tft.print("€");
-    tft.print(bitcoin_eur_price, 2);
-    tft.println(" EUR");
-    tft.println();
-
-    //Print updated date
-    tft.setCursor(usdX, usdY +70);
-    tft.setTextSize(1);
-    tft.print(updated_time);
-
-    // Draw the border around the bottom text
-    tft.drawRect(borderX, borderY, borderWidth, borderHeight, ACCENT_COLOR);
-  
-  
-   } else {
-     // If the request failed, display an error message on the TFT display
-     tft.setCursor(0, 0);
-     tft.print("Error: Failed to retrieve suggested fees.");
+  int nodeY = 0; 
+  int nodeLineWidth = 3;
+  int nodeChartX = (capacityChartX / 2 + 50);
+  int nodeChartY = (capacityChartY / 2 +10);
+  const uint16_t colors[] = {TFT_RED, TFT_GREEN, TFT_YELLOW, TFT_CYAN};
+  int colorIndex = 0;
+  for (const char* nodeType : {"tor_nodes", "clearnet_nodes",  "clearnet_tor_nodes"}) {  //removed "unannounced_nodes",
+    //drop the _nodes from the response and put it in label 
+    std::string nodeTypeStr(nodeType);
+    std::string label = nodeTypeStr.substr(0, nodeTypeStr.find("_nodes"));
+    int prevNodeCount = -1;
+    float prevSmoothedNodeCount = -1.0;
+    for (int i = 0; i < numInstances; i++) {
+      uint64_t nodeCount = doc[i][nodeType].as<uint64_t>();
+      float smoothedNodeCount = nodeCount;
+      if (prevSmoothedNodeCount != -1.0) {
+        smoothedNodeCount = prevSmoothedNodeCount + SMOOTHING_FACTOR * (nodeCount - prevSmoothedNodeCount);
+      }
+       nodeY = nodeChartY + chartHeight - (int)(smoothedNodeCount * nodeScaleFactor) - 10;
+      if (prevNodeCount != -1) {
+        int prevNodeY = nodeChartY + chartHeight - (int)(prevSmoothedNodeCount * nodeScaleFactor) - 10;
+        uint16_t color = colors[colorIndex % (sizeof(colors) / sizeof(colors[0]))];
+        tft.drawLine(nodeChartX + (i-1)*(nodeLineWidth+chartMargin), prevNodeY, nodeChartX + i*(nodeLineWidth+chartMargin), nodeY, color);  
+    }
+    prevNodeCount = nodeCount;
+    prevSmoothedNodeCount = smoothedNodeCount;
    }
-
-  // Clean up
-  http.end();
-}
-
-
-void displayBitcoinPrice() {
-  // Clear the screen
-  tft.fillScreen(BACKGROUND_COLOR);
-
-  // Send the API request
-  HTTPClient http;
-  http.begin(bitcoin_price_api_url);
-  int httpCode = http.GET();
-
-  // Check if the request was successful
-  if (httpCode == 200) {
-    // Parse the JSON response
-    String response = http.getString();
-    DynamicJsonDocument doc(1024);
-    deserializeJson(doc, response);
-    
-    // Get the current bitcoin price from the response
-    float bitcoin_price = doc["bpi"]["USD"]["rate_float"];
-
-    // Display the current bitcoin price on the TFT display
-    tft.setCursor(0, 0);
-    tft.println("Current Bitcoin Price");
-    tft.println();
-    tft.print("Price: $");
-    tft.println(bitcoin_price, 2);
+   uint16_t color = colors[colorIndex % (sizeof(colors) / sizeof(colors[0]))];
+   tft.setTextSize(1);
+   tft.setTextDatum(TR_DATUM); // Set text alignment to top-right
+   tft.setTextColor(color);
+   tft.drawString(label.c_str(), nodeChartX + chartWidth - 35, (nodeY +2), 2);
   
-  } else {
-    // Display an error message on the TFT display
-    tft.setCursor(0, 50);
-    tft.println("Error: Unable to retrieve bitcoin price");
+    colorIndex++;
+    nodeChartY += 10 + 1;
   }
+   tft.setRotation(0);
+   tft.setTextSize(1);
+   tft.setTextColor(TFT_WHITE);
+   tft.setCursor(borderThickness+2,borderThickness+10);
+   tft.print("Capacity");
+   tft.setRotation(1);
 
-  // End the HTTP connection
-  http.end();
+  delay(5000);
+  checkButtonPress(currentDisplay, maxDisplay, lastButtonPress, button1State, button2State);
+  currentDisplay++;
 }
 
 void nodeBuddy(){
   // Clear the screen
   tft.fillScreen(BACKGROUND_COLOR);
   
-    // Send the API request
-  HTTPClient http;
-  http.begin(lnplus_api_url);
-  int httpCode = http.GET();
-  
-  // If the request was successful, parse the JSON response
-  if (httpCode == HTTP_CODE_OK) {
-    String jsonStr = http.getString();
-    DynamicJsonDocument doc(1024);
-    deserializeJson(doc, jsonStr);
-      
+  // Send the API request
+  DynamicJsonDocument doc(2048);
+  getData(lnplus_api_url, doc);
+
     // Parse the JSON response
     String alias = doc["alias"].as<String>();
     String node_color = doc["color_hex"];
     String open_channels = doc["open_channels"];
-    String node_capacity = doc["capacity"];
+    uint64_t total_capacity = doc["capacity"].as<uint64_t>();
+    double total_capacity_btc = total_capacity / 100000000.0;
     String lnp_hubness = doc["weighted_hubness_rank"];
     String lnp_rank = doc["weighted_hubness_rank"];
     String lnp_rank_name = doc["lnp_rank_name"].as<String>();
     String lnp_positive_ratings_received = doc["lnp_positive_ratings_received"].as<String>();
-
-    // Calculate the center x-coordinate for the title
-    int titleWidth = tft.textWidth(alias);
-    int titleX = (tft.width() - titleWidth) / 2;
-
-    // Define the border coordinates
-    int titleY = 1;
-    int borderX = 10;
-    int borderY = titleY + tft.fontHeight(TITLE_SIZE)+30;
-    int borderWidth = tft.width() - 20;
-    int borderHeight = tft.height() - borderY - 5;
-
-    // Calculate the center x-coordinate for the USD line
-    int clearnetWidth = tft.textWidth(alias);
-    int clearnetX = (tft.width() - clearnetWidth) / 2;
-
-    // Calculate the y-coordinate for the "clearnet" line
-    int clearnetY = titleY + tft.fontHeight(TITLE_SIZE) + 45;
-
-    // Display the current bitcoin price on the TFT display
-    tft.setTextSize(VALUE_SIZE);
-    tft.setTextColor(TFT_MAGENTA);
-    tft.setCursor(titleX, titleY); // Draw the title centered on the x-coordinate
-    tft.println(alias);
-    tft.println();
+    String title = alias;
+    String text = "Text";
+    String color = node_color;   //need to takke this from #xxxx to 0xXXXX
+    drawBorderText(0, 0, title, text, TFT_MAGENTA);
     
-    tft.setTextSize(1);
+    // Display node info 
+    tft.setTextColor(TFT_MAGENTA);
+    tft.setTextSize(VALUE_SIZE);
+    tft.setCursor(titleX, titleY);
+    tft.println(alias);
     tft.setTextColor(TITLE_COLOR);
-    tft.setCursor(titleX, titleY + 40);
+    tft.setTextSize(VALUE_SIZE);
+    tft.setCursor(textX + 20, textY + 35); //  20 padding on the x, 40 on the y
     tft.print("Channels: ");
     tft.println(open_channels);
-    tft.setCursor(titleX, titleY + 50);
+    tft.setCursor(textX + 20, textY + 50);
     tft.print("Capacity: ");
-    tft.println(node_capacity);
-    tft.setCursor(titleX, titleY + 60);
+    tft.print(total_capacity_btc);
+    tft.println("B");
+    tft.setCursor(textX + 20, textY + 65);
     tft.print("Hubness: ");
     tft.println(lnp_hubness);
-    tft.setCursor(titleX, titleY + 70);
+    tft.setCursor(textX + 20, textY + 80);
     tft.print("Rank: ");
     tft.println(lnp_rank);
-    tft.setCursor(titleX, titleY + 80);
+    tft.setCursor(textX + 20, textY + 95);
     tft.print("Ratings: ");
     tft.println(lnp_positive_ratings_received);
-    tft.setCursor(titleX, titleY + 90);
-    tft.print("LN+ level: : ");
+    tft.setCursor(textX + 20, textY + 110);
+    tft.print("LN+ level:");
+    tft.setTextColor(0xffda24);
     tft.println(lnp_rank_name);
   
-    // Draw the border around the bottom text
-    tft.drawRect(borderX, borderY, borderWidth, borderHeight, TFT_MAGENTA);
+    delay(5000);
+    checkButtonPress(currentDisplay, maxDisplay, lastButtonPress, button1State, button2State);
+    currentDisplay = 0;
+}
 
-  } else {
-    // If the API request failed, display an error message
-    tft.println("Error: Failed to retrieve Lightning Network statistics");
+//////////tools
+
+void checkButtonPress(int& currentDisplay, int maxDisplay, unsigned long& lastButtonPress, int& button1State, int& button2State) {
+  // Get the current time
+  unsigned long currentTime = millis();
+
+  // Check if button 1 was pressed
+  button1State = digitalRead(BUTTON_1);
+  if (button1State == LOW && currentTime - lastButtonPress > 1) {
+    currentDisplay--;
+    if (currentDisplay < 0) {
+      currentDisplay = maxDisplay;
+    }
+    lastButtonPress = currentTime;
   }
 
-  // Clean up
+  // Check if button 2 was pressed
+  button2State = digitalRead(BUTTON_2);
+  if (button2State == LOW && currentTime - lastButtonPress > 1) {
+    currentDisplay++;
+    if (currentDisplay > maxDisplay) {
+      currentDisplay = 0;
+    }
+    lastButtonPress = currentTime;
+  }
+}
+
+void getData(String api_url, DynamicJsonDocument& doc) {
+  HTTPClient http;
+  http.begin(api_url);
+  int httpCode = http.GET();
+
+  // Check if the request was successful
+  if (httpCode == HTTP_CODE_OK) {
+    // Parse the JSON response
+    String response = http.getString();
+    deserializeJson(doc, response);
+  }
+
+  // End the HTTP connection
   http.end();
 }
 
-}
+void drawBorderText(int x, int y, String title, String text, uint16_t color) {
+   
+  // Calculate the center x-coordinate for the title
+  int titleWidth = tft.textWidth(title);
+  int titleX = x + (tft.width() - titleWidth) / 2;
+
+  // Calculate the center x-coordinate for the text
+  int textWidth = tft.textWidth(text);
+  int textX = x + (tft.width() - textWidth) / 2;
+
+  // Calculate the y-coordinate for the text
+  int titleY = y;
+  int textY = titleY + tft.fontHeight(TITLE_SIZE) + 45;
+
+  // Define the border coordinates
+  int borderX = x + 10;
+  int borderY = titleY + tft.fontHeight(TITLE_SIZE)+30;
+  int borderWidth = tft.width() - 20;
+  int borderHeight = tft.height() - borderY - 5;
+    
+  // Draw the border around the bottom text
+  tft.drawRect(borderX, borderY, borderWidth, borderHeight, color);
+  //set the title cursor centroed on x
+   tft.setCursor(titleX - 30, titleY);
 }
