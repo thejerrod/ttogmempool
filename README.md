@@ -26,14 +26,10 @@ After uploading the sketch to your board, the TTGO T-Display should display the 
 - **nodeBuddy**: Display LN+ stats about a node you specify by pubID.
 
 
-![image](https://user-images.githubusercontent.com/25254103/235862178-d5e5c0a2-8d42-447d-ad94-d380e95d8a4f.png)
-![image](https://user-images.githubusercontent.com/25254103/235862247-6aa55472-a04e-4a63-b147-7e0e72860682.png)
-![image](https://user-images.githubusercontent.com/25254103/235862272-3a296325-cce6-4c10-ae14-6002987c92aa.png)
-![image](https://user-images.githubusercontent.com/25254103/235862301-9e5f9909-933c-45d1-bb15-eeb52d7269c4.png)
-![image](https://user-images.githubusercontent.com/25254103/235862329-c4de1ba5-1aad-4c68-9943-5bd8ae2bba40.png)
-![image](https://user-images.githubusercontent.com/25254103/235862358-bb9e75d7-ff05-46bf-b34c-f3e1140e8c37.png)
-![image](https://user-images.githubusercontent.com/25254103/235862378-3a433f51-49e3-40ea-88ad-d2c522b28c1a.png)
 
+<img src="https://user-images.githubusercontent.com/25254103/235862178-d5e5c0a2-8d42-447d-ad94-d380e95d8a4f.png" width=25% height=25%><img src="https://user-images.githubusercontent.com/25254103/235862247-6aa55472-a04e-4a63-b147-7e0e72860682.png" width=25% height=25%><img src="https://user-images.githubusercontent.com/25254103/235862272-3a296325-cce6-4c10-ae14-6002987c92aa.png" width=25% height=25%>
+<img src="https://user-images.githubusercontent.com/25254103/235862301-9e5f9909-933c-45d1-bb15-eeb52d7269c4.png" width=25% height=25%><img src="https://user-images.githubusercontent.com/25254103/235862329-c4de1ba5-1aad-4c68-9943-5bd8ae2bba40.png" width=25% height=25%><img src="https://user-images.githubusercontent.com/25254103/235862358-bb9e75d7-ff05-46bf-b34c-f3e1140e8c37.png" width=25% height=25%>
+<img src="https://user-images.githubusercontent.com/25254103/235862378-3a433f51-49e3-40ea-88ad-d2c522b28c1a.png" width=25% height=25%>
 
 
 
