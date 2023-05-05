@@ -27,16 +27,20 @@ TFT_eSPI tft = TFT_eSPI();
 #define VALUE_COLOR ACCENT_COLOR
 
 // wifi setup
-const char* ssid     = "lulznet";       ///EDIT
-const char* password = "lol money, money lol"; //EDIT
+const char* ssid     = "";       ///EDIT
+const char* password = ""; //EDIT
 
 // API URLs
+
 const char* mempool_api_url = "https://mempool.space/api/v1/fees/recommended";
 const char* lightning_api_url = "https://mempool.space/api/v1/lightning/statistics/latest";
 const char* block_api_url = "https://mempool.space/api/blocks/";
 const char* bitcoin_price_api_url = "https://api.coindesk.com/v1/bpi/currentprice.json"; 
 const char* lightning_api_3m_url = "https://mempool.space/api/v1/lightning/statistics/3m"; 
 const char* lnplus_api_url = "https://lightningnetwork.plus/api/2/get_node/pubkey=0254bb156ecd0eac318844415a91a377bc6947ea4c9fbe5d248e563c29a1662835"; 
+
+//map for api_url cache (becasue arduino's std::map sucks)
+std::vector<std::pair<String, std::pair<DynamicJsonDocument, unsigned long>>> apiCache;
 
 //screen setup
 int titleX;
@@ -115,15 +119,15 @@ void loop() {
       // Display  node info for lightning pubkey
       nodeBuddy();
       break;
-    }
- }
-  
+  }
+}
+
 void displaySuggestedFees() {
   // Clear the screen
   tft.fillScreen(BACKGROUND_COLOR);
   
   DynamicJsonDocument doc(1024);
-  getData(mempool_api_url, doc);
+  getData(mempool_api_url, doc, apiCache);
 
   // Parse the JSON response
   int fastestFee = doc["fastestFee"];
@@ -168,7 +172,7 @@ void displayLightningStats() {
   tft.fillScreen(BACKGROUND_COLOR);
 
   DynamicJsonDocument doc(1024);
-  getData(lightning_api_url, doc);
+  getData(lightning_api_url, doc, apiCache);
 
   // Parse the JSON response
   int channel_count = doc["latest"]["channel_count"].as<int>();
@@ -223,7 +227,7 @@ void displayBlocks() {
   // Clear the screen
   tft.fillScreen(BACKGROUND_COLOR);
   DynamicJsonDocument doc(2048);
-  getData(block_api_url, doc);
+  getData(block_api_url, doc, apiCache);
   const size_t num_blocks = doc.size();
 
   // Calculate blocks and time until halving
@@ -298,8 +302,9 @@ void displayBitcoinPrice() {
   // Clear the screen
   tft.fillScreen(BACKGROUND_COLOR);
 
-  DynamicJsonDocument doc(1024);
-  getData(bitcoin_price_api_url, doc);
+
+  DynamicJsonDocument doc(2048);
+  getData(bitcoin_price_api_url, doc, apiCache);
     
   String updated_time = doc["time"]["updatedISO"];
   float bitcoin_usd_price = doc["bpi"]["USD"]["rate_float"];
@@ -346,7 +351,7 @@ void displayTransactionVolumeOverTime() {
   tft.fillScreen(BACKGROUND_COLOR);
    
   DynamicJsonDocument doc(2048);
-  getData(block_api_url, doc);
+  getData(block_api_url, doc, apiCache);
 
   String title = "TX Vol";
   String text = "Text";
@@ -455,7 +460,7 @@ void displayCapacityGrowth() {
 
   // Send the API request and parse the response
   DynamicJsonDocument doc(4096);
-  getData(lightning_api_3m_url, doc);
+  getData(lightning_api_3m_url, doc, apiCache);
 
   // Calculate some variables for chart display
   String title = "LN Growth";
@@ -559,8 +564,8 @@ void displayCapacityGrowth() {
    tft.setTextColor(color);
    tft.drawString(label.c_str(), nodeChartX + chartWidth - 35, (nodeY +2), 2);
   
-    colorIndex++;
-    nodeChartY += 10 + 1;
+  colorIndex++;
+  nodeChartY += 10 + 1;
   }
   tft.setRotation(0);
   tft.setTextSize(1);
@@ -580,7 +585,7 @@ void nodeBuddy(){
   
   // Send the API request
   DynamicJsonDocument doc(2048);
-  getData(lnplus_api_url, doc);
+  getData(lnplus_api_url, doc, apiCache);
 
   // Parse the JSON response
   String alias = doc["alias"].as<String>();
@@ -656,20 +661,42 @@ void checkButtonPress(int& currentDisplay, int maxDisplay, unsigned long& lastBu
   }
 }
 
-void getData(String api_url, DynamicJsonDocument& doc) {
-  HTTPClient http;
-  http.begin(api_url);
-  int httpCode = http.GET();
+void getData(String api_url, DynamicJsonDocument& doc, std::vector<std::pair<String, std::pair<DynamicJsonDocument, unsigned long>>>& apiCache) {
+  unsigned long currentTime = millis();
 
-  // Check if the request was successful
-  if (httpCode == HTTP_CODE_OK) {
-    // Parse the JSON response
-    String response = http.getString();
-    deserializeJson(doc, response);
+  // Define the cache duration in seconds
+  const int CACHE_DURATION = 60;
+
+  // Check if the cache is still valid
+  bool cacheHit = false;
+  for (auto& cacheEntry : apiCache) {
+    if (cacheEntry.first == api_url && currentTime - cacheEntry.second.second < CACHE_DURATION * 1000) {
+      // Use the cached data
+      doc = cacheEntry.second.first;
+      cacheHit = true;
+      break;
+    }
   }
 
-  // End the HTTP connection
-  http.end();
+  if (!cacheHit) {
+    // Make a new API request
+    HTTPClient http;
+    http.begin(api_url);
+    int httpCode = http.GET();
+
+    // Check if the request was successful
+    if (httpCode == HTTP_CODE_OK) {
+      // Parse the JSON response
+      String response = http.getString();
+      deserializeJson(doc, response);
+
+      // Update the cache
+      apiCache.push_back({api_url, {doc, currentTime}});
+    }
+
+    // End the HTTP connection
+    http.end();
+  }
 }
 
 void drawBorderText(int x, int y, String title, String text, uint16_t color) {
